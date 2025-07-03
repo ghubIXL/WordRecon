@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Recognition Buttons</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0; /* Remove default body margin */
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        h1 {
+            color: #0056b3;
+            margin: 20px; /* Adjust margin for overall content */
+        }
+        h2, h3, h4 { /* Adjust margins for categories */
+            color: #0056b3;
+            margin-top: 15px;
+            margin-bottom: 10px;
+        }
+        .category-container, .subcategory-container, .contrast-group {
+            margin: 0 20px 30px 20px; /* Add horizontal margin */
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #fff;
+        }
+        .subcategory-container {
+            margin-top: 15px;
+            background-color: #f9f9f9;
+            border-color: #eee;
+        }
+        .contrast-group {
+            margin-top: 10px;
+            padding: 10px;
+            border: 1px dashed #ccc;
+            background-color: #fafafa;
+        }
+        .button-pair {
+            display: inline-flex;
+            align-items: center;
+            margin: 5px;
+            flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
+        }
+        button {
+            padding: 10px 15px;
+            font-size: 18px;
+            cursor: pointer;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin: 5px; /* Adjust margin for consistency */
+            transition: background-color 0.2s ease;
+        }
+        button.listen-pair {
+             background-color: #007bff;
+        }
+        button.listen-pair:hover {
+            background-color: #0056b3;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        select {
+            padding: 8px;
+            font-size: 16px;
+            border-radius: 5px;
+            margin-right: 10px; /* Space from next element */
+            min-width: 150px; /* Ensure it doesn't get too small */
+        }
+        .controls {
+            position: sticky; /* Make it sticky */
+            top: 0; /* Stick to the top of the viewport */
+            width: 100%; /* Take full width */
+            background-color: #f4f4f4; /* Background to cover content below */
+            padding: 10px 20px; /* Padding for the sticky bar */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* Subtle shadow */
+            z-index: 1000; /* Ensure it stays on top of other elements */
+            display: flex;
+            flex-wrap: wrap; /* Allow elements to wrap if space is limited */
+            align-items: center;
+            gap: 10px; /* Space between control elements */
+            box-sizing: border-box; /* Include padding in width calculation */
+        }
+        .controls label {
+            white-space: nowrap; /* Prevent label from breaking */
+        }
+        .controls input[type="text"] {
+            padding: 8px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 120px; /* Fixed width for text boxes */
+            flex-grow: 1; /* Allow them to grow if needed */
+            max-width: 200px; /* Max width */
+        }
+        .controls .control-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            flex-wrap: wrap; /* Allow buttons/inputs within group to wrap */
+        }
+        #pauseSlider {
+            width: 150px; /* Fixed width for slider */
+        }
+        #pauseValue {
+            min-width: 60px; /* Ensure space for the value display */
+            text-align: center;
+            font-weight: bold;
+        }
+        .file-input-section {
+            margin: 20px; /* Use consistent margin */
+            padding: 15px;
+            border: 1px dashed #ccc;
+            background-color: #f0f8ff;
+            border-radius: 8px;
+            text-align: center;
+        }
+        /* Wrapper for main content to apply dynamic top margin */
+        #mainContentWrapper {
+            margin-top: 0; /* Will be set by JS */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="controls" id="stickyControls">
+        <div class="control-group">
+            <label for="voiceSelect">Select Voice:</label>
+            <select id="voiceSelect"></select>
+        </div>
+
+        <div class="control-group">
+            <label for="pauseSlider">Pause:</label>
+            <input type="range" id="pauseSlider" min="100" max="10000" value="1000" step="100">
+            <span id="pauseValue">1.0 sec</span>
+        </div>
+
+        <div class="control-group">
+            <label for="textBox1">Word 1:</label>
+            <input type="text" id="textBox1" value="Red">
+            <label for="textBox2">Word 2:</label>
+            <input type="text" id="textBox2" value="Read">
+        </div>
+
+        <div class="control-group">
+            <button id="speakFirstWordButton" class="play-word">First</button>
+            <button id="speakSecondWordButton" class="play-word">Second</button>
+            <button id="speakCustomPairButton" class="listen-pair">Listen Pair</button>
+        </div>
+    </div>
+
+    <div id="mainContentWrapper">
+        <h1>Word Recognition Training</h1>
+
+        <div class="file-input-section">
+            <p>Please select your <code>words.json</code> file:</p>
+            <input type="file" id="jsonFileLoader" accept=".json">
+            <p id="loadingStatus"></p>
+        </div>
+
+        <div id="wordButtonsContainer">
+            </div>
+    </div>
+<script src="script.js"></script>
+</body>
+</html>
