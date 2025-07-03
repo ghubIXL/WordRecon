@@ -3,8 +3,7 @@ if ('speechSynthesis' in window) {
     const synth = window.speechSynthesis;
     const wordButtonsContainer = document.getElementById('wordButtonsContainer');
     const voiceSelect = document.getElementById('voiceSelect');
-    // REMOVED: const jsonFileLoader = document.getElementById('jsonFileLoader');
-    const loadingStatus = document.getElementById('loadingStatus'); // Still useful for initial load message
+    const loadingStatus = document.getElementById('loadingStatus');
 
     const textBox1 = document.getElementById('textBox1');
     const textBox2 = document.getElementById('textBox2');
@@ -22,12 +21,13 @@ if ('speechSynthesis' in window) {
     let currentPauseDurationMs = parseInt(pauseSlider.value);
 
     // --- Voice Loading State ---
-    let voicesLoadedSuccessfully = false; // Flag to track if voices have populated
+    let voicesLoadedSuccessfully = false;
     let voiceLoadRetries = 0;
-    const MAX_VOICE_RETRIES = 10;
-    const VOICE_RETRY_DELAY = 200;
+    const MAX_VOICE_RETRIES = 15;
+    const VOICE_RETRY_DELAY = 300;
 
     function populateVoiceList() {
+        console.log("populateVoiceList called.");
         const currentVoices = synth.getVoices().sort((a, b) => {
             const aname = a.name.toUpperCase();
             const bname = b.name.toUpperCase();
@@ -36,10 +36,9 @@ if ('speechSynthesis' in window) {
             return 0;
         });
 
-        // If voices are available, update the UI and set success flag
         if (currentVoices.length > 0) {
-            availableVoices = currentVoices; // Update the global variable
-            voiceSelect.innerHTML = ''; // Clear existing options
+            availableVoices = currentVoices;
+            voiceSelect.innerHTML = '';
             let defaultVoiceSelected = false;
 
             availableVoices.forEach((voice) => {
@@ -61,31 +60,30 @@ if ('speechSynthesis' in window) {
                 }
             }
             console.log("Voice list populated. Total voices:", availableVoices.length);
-            voicesLoadedSuccessfully = true; // Mark as loaded
-            voiceLoadRetries = 0; // Reset retry counter on success
-            return; // Exit here, voices are loaded
+            voicesLoadedSuccessfully = true;
+            voiceLoadRetries = 0;
+            return;
         }
 
-        // If voices are NOT available, proceed with retry logic
         if (voiceLoadRetries < MAX_VOICE_RETRIES) {
-            console.warn("No voices available yet, retrying...", voiceLoadRetries + 1);
+            console.warn("No voices available yet, retrying populateVoiceList...", voiceLoadRetries + 1);
             voiceLoadRetries++;
-            setTimeout(populateVoiceList, VOICE_RETRY_DELAY); // Retry after a short delay
-            // Update UI to show loading state if not already
-            if (voiceSelect.innerHTML === '' || voiceSelect.querySelector('option').value !== 'loading') {
+            setTimeout(populateVoiceList, VOICE_RETRY_DELAY);
+            if (voiceSelect.innerHTML === '' || voiceSelect.querySelector('option')?.value !== 'loading') {
                 voiceSelect.innerHTML = '<option value="loading">Loading voices...</option>';
             }
             return;
         } else {
             console.error("Failed to load voices after multiple retries. Please try interacting with the page, refreshing, or ensure voices are installed on your device.");
-            voiceSelect.innerHTML = '<option value="">No Voices Available</option>'; // Show a message
-            voicesLoadedSuccessfully = false; // Mark as failed
+            voiceSelect.innerHTML = '<option value="">No Voices Available</option>';
+            voicesLoadedSuccessfully = false;
         }
     }
 
-    // --- Voice Initialization Strategy for Mobile ---
+    // --- Voice Initialization Strategy for Mobile (Enhanced) ---
     if (synth.onvoiceschanged !== undefined) {
         synth.onvoiceschanged = () => {
+            console.log("onvoiceschanged event fired.");
             if (!voicesLoadedSuccessfully) {
                 populateVoiceList();
             }
@@ -97,11 +95,27 @@ if ('speechSynthesis' in window) {
         if (!firstInteractionDone) {
             firstInteractionDone = true;
             console.log("First user interaction detected. Attempting to populate voices.");
+
+            if (synth && !synth.speaking) {
+                try {
+                    const silentUtterance = new SpeechSynthesisUtterance('');
+                    silentUtterance.volume = 0;
+                    silentUtterance.rate = 1;
+                    silentUtterance.pitch = 1;
+                    synth.speak(silentUtterance);
+                    console.log("Attempted silent utterance to prime speech engine.");
+                } catch (e) {
+                    console.warn("Error attempting silent utterance:", e);
+                }
+            }
+
             populateVoiceList();
+
             document.removeEventListener('click', handleFirstInteraction);
             document.removeEventListener('touchstart', handleFirstInteraction);
         }
     }
+    // Listen for general interactions to activate Web Speech API
     document.addEventListener('click', handleFirstInteraction);
     document.addEventListener('touchstart', handleFirstInteraction);
 
@@ -129,6 +143,7 @@ if ('speechSynthesis' in window) {
             console.warn("Selected voice not found, falling back to first available voice.");
         } else {
             console.warn("No specific voice selected or available. Browser will use default.");
+            utterance.lang = 'en-US'; // Fallback language
         }
         utterance.pitch = 1;
         utterance.rate = 1;
@@ -145,24 +160,29 @@ if ('speechSynthesis' in window) {
             currentTimeoutId = null;
         }
 
-        const selectedVoice = getSelectedVoice();
-        if (!selectedVoice && availableVoices.length === 0) {
-            console.warn("No voices available to speak. Please try interacting with the page first or ensure voices are installed.");
+        let selectedVoice = getSelectedVoice();
+        if (!selectedVoice && availableVoices.length > 0) {
+            selectedVoice = availableVoices[0];
+            console.warn("Selected voice not found for pair, falling back to first available voice.");
+        } else if (!selectedVoice && availableVoices.length === 0) {
+            console.warn("No voices available to speak. Attempting to activate speech engine (for pair).");
             if (!voicesLoadedSuccessfully) {
                  populateVoiceList();
             }
-            return;
+            // Will proceed to speak with default browser voice below
         }
 
         const utterance1 = new SpeechSynthesisUtterance(word1);
-        utterance1.voice = selectedVoice || (availableVoices.length > 0 ? availableVoices[0] : null);
+        utterance1.voice = selectedVoice;
+        utterance1.lang = selectedVoice ? selectedVoice.lang : 'en-US'; // Ensure lang is set for default
         utterance1.pitch = 1;
         utterance1.rate = 1;
         utterance1.onerror = (event) => console.error("Error speaking word 1 in pair:", event.error, word1);
         utterance1.onend = () => {
             currentTimeoutId = setTimeout(() => {
                 const utterance2 = new SpeechSynthesisUtterance(word2);
-                utterance2.voice = selectedVoice || (availableVoices.length > 0 ? availableVoices[0] : null);
+                utterance2.voice = selectedVoice;
+                utterance2.lang = selectedVoice ? selectedVoice.lang : 'en-US'; // Ensure lang is set for default
                 utterance2.pitch = 1;
                 utterance2.rate = 1;
                 utterance2.onerror = (event) => console.error("Error speaking word 2 in pair:", event.error, word2);
@@ -230,39 +250,42 @@ if ('speechSynthesis' in window) {
         });
     }
 
-    // --- AUTOMATIC JSON Loading Logic (NEW) ---
-    // This replaces the old jsonFileLoader input and event listener.
-    // Make sure your words.json file is in the same directory as your index.html
-    // on GitHub Pages, or adjust the path if it's in a subfolder (e.g., './data/words.json').
-    const JSON_FILE_PATH = 'words.json'; // IMPORTANT: Adjust this path if your JSON file is not in the root
+    // --- AUTOMATIC JSON Loading Logic ---
+    const JSON_FILE_PATH = 'words.json';
 
     async function loadJsonDataAutomatically() {
+        console.log("loadJsonDataAutomatically called.");
         loadingStatus.textContent = `Loading "${JSON_FILE_PATH}"...`;
         try {
+            console.log(`Attempting to fetch JSON from: ${JSON_FILE_PATH}`);
+            // Added a small delay here to account for potential timing issues on mobile
+            await new Promise(resolve => setTimeout(resolve, 100)); // Delay for 100ms
             const response = await fetch(JSON_FILE_PATH);
+            console.log("Fetch response received. Status:", response.status, response.statusText);
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                const errorText = await response.text();
+                console.error(`Failed to fetch JSON. Status: ${response.status}. Response:`, errorText);
+                throw new Error(`HTTP error! Status: ${response.status} - ${response.statusText}`);
             }
             const jsonData = await response.json();
+            console.log("JSON data parsed successfully.");
             generateButtons(jsonData);
             loadingStatus.textContent = `"${JSON_FILE_PATH}" loaded successfully!`;
-            // Remove the file input section from HTML after successful load
-            // This assumes your HTML structure has a div with class "file-input-section"
             const fileInputSection = document.querySelector('.file-input-section');
             if (fileInputSection) {
-                fileInputSection.style.display = 'none'; // Hide the input section
+                fileInputSection.style.display = 'none';
             }
         } catch (error) {
-            loadingStatus.textContent = `Error loading JSON from "${JSON_FILE_PATH}": ${error.message}. Please ensure the file is correctly placed on GitHub Pages.`;
-            console.error("Error fetching JSON:", error);
+            loadingStatus.textContent = `Error loading JSON from "${JSON_FILE_PATH}": ${error.message}. Please ensure the file is correctly placed on GitHub Pages and accessible.`;
+            console.error("Error fetching JSON in catch block:", error);
             wordButtonsContainer.innerHTML = '<p style="color: red;">Error loading word data. Please ensure <code>words.json</code> is accessible.</p>';
         }
     }
 
-    // Call the automatic loader when the window loads
+    // Initial load for JSON when the window is fully loaded
     window.addEventListener('load', () => {
-        loadJsonDataAutomatically(); // Initiate JSON loading
-        // Also run the sticky controls height adjustment
+        console.log("window 'load' event fired. Initiating JSON load and UI adjustments.");
+        loadJsonDataAutomatically();
         const controlsHeight = stickyControls.offsetHeight;
         mainContentWrapper.style.marginTop = controlsHeight + 'px';
         console.log("Sticky controls height:", controlsHeight, "px. Set main content margin-top.");
@@ -287,7 +310,6 @@ if ('speechSynthesis' in window) {
         currentPauseDurationMs = parseInt(pauseSlider.value);
         pauseValue.textContent = (currentPauseDurationMs / 1000).toFixed(1) + " sec";
     });
-
 
     // --- Event Delegation for Generated Buttons ---
     wordButtonsContainer.addEventListener('click', (event) => {
