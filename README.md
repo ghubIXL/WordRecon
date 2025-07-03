@@ -1,2 +1,0 @@
-# WordRecon
-Word Recognition Project
