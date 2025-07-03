@@ -6,26 +6,35 @@
     <title>Word Recognition Buttons</title>
     <style>
         body {
-            font-family: sans-serif;
-            margin: 0; /* Remove default body margin */
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            margin: 0;
             background-color: #f4f4f4;
             color: #333;
+            line-height: 1.6; /* Improved readability */
+            -webkit-text-size-adjust: 100%; /* Prevent text scaling on orientation change */
         }
         h1 {
             color: #0056b3;
-            margin: 20px; /* Adjust margin for overall content */
+            margin: 20px;
+            text-align: center; /* Center align for mobile */
+            font-size: 1.8em; /* Adjust font size for mobile */
         }
-        h2, h3, h4 { /* Adjust margins for categories */
+        h2, h3, h4 {
             color: #0056b3;
             margin-top: 15px;
             margin-bottom: 10px;
+            font-size: 1.4em; /* Adjust font size */
         }
+        h3 { font-size: 1.2em; }
+        h4 { font-size: 1em; }
+
         .category-container, .subcategory-container, .contrast-group {
-            margin: 0 20px 30px 20px; /* Add horizontal margin */
+            margin: 15px 10px; /* Reduced horizontal margin for small screens */
             padding: 15px;
             border: 1px solid #ddd;
             border-radius: 8px;
             background-color: #fff;
+            box-sizing: border-box; /* Include padding in width */
         }
         .subcategory-container {
             margin-top: 15px;
@@ -39,24 +48,33 @@
             background-color: #fafafa;
         }
         .button-pair {
-            display: inline-flex;
+            display: flex; /* Use flex for layout */
+            flex-wrap: wrap; /* Allow buttons to wrap */
+            justify-content: center; /* Center buttons within the pair */
             align-items: center;
-            margin: 5px;
-            flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
+            margin: 10px 0; /* Add more vertical margin between pairs */
+            gap: 8px; /* Space between buttons within a pair */
         }
         button {
-            padding: 10px 15px;
-            font-size: 18px;
+            padding: 12px 18px; /* Larger tap targets */
+            font-size: 1em; /* Base font size for buttons */
             cursor: pointer;
             background-color: #28a745;
             color: white;
             border: none;
             border-radius: 5px;
-            margin: 5px; /* Adjust margin for consistency */
-            transition: background-color 0.2s ease;
+            flex-grow: 1; /* Allow buttons to grow and fill space */
+            min-width: 100px; /* Minimum width for buttons */
+            max-width: 48%; /* Allow two buttons per line on wider mobiles */
+            transition: background-color 0.2s ease, transform 0.1s ease; /* Add transform for tap feedback */
+            white-space: nowrap; /* Prevent button text from wrapping initially */
+            box-sizing: border-box; /* Include padding in width */
+        }
+        button:active { /* Visual feedback on tap */
+            transform: translateY(1px);
         }
         button.listen-pair {
-             background-color: #007bff;
+            background-color: #007bff;
         }
         button.listen-pair:hover {
             background-color: #0056b3;
@@ -65,63 +83,110 @@
             background-color: #218838;
         }
         select {
-            padding: 8px;
-            font-size: 16px;
+            padding: 10px; /* Larger tap target */
+            font-size: 1em;
             border-radius: 5px;
-            margin-right: 10px; /* Space from next element */
-            min-width: 150px; /* Ensure it doesn't get too small */
+            margin-right: 10px;
+            min-width: 120px; /* Minimum width */
+            flex-grow: 1; /* Allow it to grow */
+            max-width: 250px; /* Max width */
+            box-sizing: border-box;
+            background-color: #fff; /* Ensure white background */
+            border: 1px solid #ccc; /* Ensure border */
         }
         .controls {
-            position: sticky; /* Make it sticky */
-            top: 0; /* Stick to the top of the viewport */
-            width: 100%; /* Take full width */
-            background-color: #f4f4f4; /* Background to cover content below */
-            padding: 10px 20px; /* Padding for the sticky bar */
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* Subtle shadow */
-            z-index: 1000; /* Ensure it stays on top of other elements */
+            position: sticky;
+            top: 0;
+            width: 100%;
+            background-color: #f4f4f4;
+            padding: 10px 15px; /* Adjusted padding for smaller screens */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            z-index: 1000;
             display: flex;
-            flex-wrap: wrap; /* Allow elements to wrap if space is limited */
-            align-items: center;
-            gap: 10px; /* Space between control elements */
-            box-sizing: border-box; /* Include padding in width calculation */
+            flex-direction: column; /* Stack control groups vertically on mobile */
+            align-items: stretch; /* Stretch items to fill width */
+            gap: 10px;
+            box-sizing: border-box;
         }
         .controls label {
-            white-space: nowrap; /* Prevent label from breaking */
+            white-space: nowrap;
+            margin-right: 5px;
+            font-weight: bold;
         }
         .controls input[type="text"] {
-            padding: 8px;
-            font-size: 16px;
+            padding: 10px; /* Larger tap target */
+            font-size: 1em;
             border: 1px solid #ccc;
             border-radius: 5px;
-            width: 120px; /* Fixed width for text boxes */
-            flex-grow: 1; /* Allow them to grow if needed */
-            max-width: 200px; /* Max width */
+            flex-grow: 1;
+            width: auto; /* Let flex-grow handle width */
+            max-width: none; /* No max width within group */
+            box-sizing: border-box;
         }
         .controls .control-group {
             display: flex;
+            flex-wrap: wrap; /* Allow elements within group to wrap */
             align-items: center;
-            gap: 5px;
-            flex-wrap: wrap; /* Allow buttons/inputs within group to wrap */
+            gap: 8px; /* Consistent gap */
+            width: 100%; /* Take full width of controls container */
+            justify-content: flex-start; /* Align items to start */
+        }
+        .controls .control-group button {
+            flex-grow: 1;
+            max-width: none; /* Let them grow freely within group */
         }
         #pauseSlider {
-            width: 150px; /* Fixed width for slider */
+            width: auto; /* Allow slider to stretch */
+            flex-grow: 1;
         }
         #pauseValue {
-            min-width: 60px; /* Ensure space for the value display */
+            min-width: 50px;
             text-align: center;
             font-weight: bold;
         }
+        /* --- Hide the file input section as JSON is now auto-loaded --- */
         .file-input-section {
-            margin: 20px; /* Use consistent margin */
-            padding: 15px;
-            border: 1px dashed #ccc;
-            background-color: #f0f8ff;
-            border-radius: 8px;
-            text-align: center;
+            display: none;
+            /* You might keep this for debugging if you want, but display: none; will hide it */
         }
-        /* Wrapper for main content to apply dynamic top margin */
         #mainContentWrapper {
             margin-top: 0; /* Will be set by JS */
+        }
+
+        /* --- Media Queries for Larger Screens (Optional, but good practice) --- */
+        @media (min-width: 768px) {
+            h1 {
+                font-size: 2.5em;
+            }
+            h2 { font-size: 1.6em; }
+            h3 { font-size: 1.3em; }
+            h4 { font-size: 1.1em; }
+            .controls {
+                flex-direction: row; /* Layout controls in a row on wider screens */
+                justify-content: space-around; /* Distribute space */
+                padding: 10px 20px;
+            }
+            .controls .control-group {
+                width: auto; /* Let content dictate width */
+                flex-wrap: nowrap; /* Prevent wrapping if space allows */
+            }
+            .controls input[type="text"] {
+                width: 120px; /* Revert to fixed width on larger screens */
+            }
+            #pauseSlider {
+                width: 150px; /* Revert to fixed width */
+            }
+            button {
+                padding: 10px 15px; /* Smaller padding for desktop buttons */
+                font-size: 18px;
+                max-width: none; /* No max width for desktop */
+            }
+            .button-pair {
+                justify-content: flex-start; /* Align to start on desktop */
+            }
+            .category-container, .subcategory-container, .contrast-group {
+                margin: 0 20px 30px 20px; /* Restore desktop margins */
+            }
         }
     </style>
 </head>
@@ -129,7 +194,7 @@
 
     <div class="controls" id="stickyControls">
         <div class="control-group">
-            <label for="voiceSelect">Select Voice:</label>
+            <label for="voiceSelect">Voice:</label>
             <select id="voiceSelect"></select>
         </div>
 
@@ -156,15 +221,12 @@
     <div id="mainContentWrapper">
         <h1>Word Recognition Training</h1>
 
-        <div class="file-input-section">
-            <p>Please select your <code>words.json</code> file:</p>
-            <input type="file" id="jsonFileLoader" accept=".json">
-            <p id="loadingStatus"></p>
-        </div>
+        <p id="loadingStatus" style="text-align: center; margin: 15px; font-weight: bold; color: #555;"></p>
 
         <div id="wordButtonsContainer">
             </div>
     </div>
+
 <script src="script.js"></script>
 </body>
 </html>
