@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gaze Stabilization Tool</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            background-color: #e0f2f7; /* Light blue background */
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 10px; /* Reduced padding */
+            box-sizing: border-box;
+        }
+
+        .controls-container {
+            background-color: #ffffff;
+            padding: 15px; /* Reduced padding */
+            border-radius: 12px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 15px; /* Reduced margin */
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px; /* Reduced gap */
+            box-sizing: border-box;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px; /* Reduced gap */
+            min-width: 150px;
+        }
+
+        label {
+            font-weight: 600;
+            color: #555;
+            font-size: 0.9em; /* Slightly smaller font */
+            text-align: center;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 10px;
+            background: #d1e7f0; /* Lighter blue for track */
+            outline: none;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #007bff; /* Blue thumb */
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #007bff;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        input[type="number"],
+        input[type="color"],
+        select {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 1em;
+            text-align: center;
+            width: 100px; /* Fixed width for number input */
+            box-sizing: border-box;
+        }
+        select {
+            width: 100%; /* Make select full width in its group */
+            min-width: 100px;
+        }
+
+        input[type="color"] {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            border: none;
+            width: 50px;
+            height: 35px;
+            padding: 0;
+            border-radius: 8px;
+            cursor: pointer;
+            background-color: transparent; /* Ensure background is transparent */
+        }
+
+        input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+
+        input[type="color"]::-webkit-color-swatch {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+
+        input[type="color"]::-moz-color-swatch-wrapper {
+            padding: 0;
+        }
+
+        input[type="color"]::-moz-color-swatch {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+            width: 100%;
+            justify-content: center;
+        }
+
+        button {
+            padding: 12px 25px;
+            font-size: 1.1em;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+            font-weight: bold;
+        }
+
+        button#startButton {
+            background-color: #28a745; /* Green */
+            color: white;
+        }
+
+        button#startButton:hover {
+            background-color: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        button#stopButton {
+            background-color: #dc3545; /* Red */
+            color: white;
+        }
+
+        button#stopButton:hover {
+            background-color: #c82333;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        canvas {
+            border: 2px solid #007bff;
+            background-color: #f8fcfd; /* Default very light blue/white for canvas background, overridden by JS */
+            display: block;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            max-width: 100%; /* Ensure responsiveness */
+            height: auto; /* Maintain aspect ratio */
+            flex-grow: 1; /* Allow canvas to take up available space */
+        }
+
+        .current-value {
+            font-size: 0.85em; /* Slightly smaller font */
+            color: #007bff;
+            font-weight: bold;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 5px;
+            font-weight: 600;
+            color: #555;
+            font-size: 0.9em;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #007bff;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .controls-container {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 10px;
+                gap: 10px;
+            }
+            .control-group {
+                width: 100%;
+                align-items: stretch;
+            }
+            input[type="range"],
+            input[type="number"],
+            input[type="color"],
+            select {
+                width: 100%;
+            }
+            .button-group {
+                flex-direction: column;
+                gap: 10px;
+            }
+            button {
+                width: 100%;
+            }
+            .checkbox-group {
+                justify-content: center;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="controls-container">
+        <div class="control-group">
+            <label for="speedSlider">Speed:</label>
+            <input type="range" id="speedSlider" min="1" max="60" value="3" step="0.5">
+            <span id="currentSpeed" class="current-value">3.0</span>
+        </div>
+
+        <div class="control-group">
+            <label for="sizeSlider">Size:</label>
+            <input type="range" id="sizeSlider" min="10" max="100" value="30" step="5">
+            <span id="currentSize" class="current-value">30 px</span>
+        </div>
+
+        <div class="control-group">
+            <label for="durationInput">Duration (seconds):</label>
+            <input type="number" id="durationInput" min="5" max="300" value="30">
+            <span id="currentDuration" class="current-value">30 seconds</span>
+        </div>
+
+        <div class="control-group">
+            <label for="shapeColorPicker">Shape Color:</label>
+            <input type="color" id="shapeColorPicker" value="#007bff">
+            <span id="currentShapeColor" class="current-value">#007bff</span>
+        </div>
+
+        <div class="control-group">
+            <label for="backgroundColorPicker">Background Color:</label>
+            <input type="color" id="backgroundColorPicker" value="#FFFFFF">
+            <span id="currentBackgroundColor" class="current-value">#FFFFFF</span>
+        </div>
+
+        <div class="control-group">
+            <label for="directionSelect">Direction:</label>
+            <select id="directionSelect">
+                <option value="horizontal">Horizontal</option>
+                <option value="vertical">Vertical</option>
+                <option value="diagonal">Diagonal</option>
+                <option value="random">Random</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label for="shapeSelect">Shape:</label>
+            <select id="shapeSelect">
+                <option value="dot">Dot</option>
+                <option value="square">Square</option>
+                <option value="diamond">Diamond</option>
+            </select>
+        </div>
+
+        <div class="button-group">
+            <button id="startButton">Start</button>
+            <button id="stopButton">Stop</button>
+        </div>
+
+        <div class="checkbox-group">
+            <input type="checkbox" id="fullscreenCheckbox" checked>
+            <label for="fullscreenCheckbox">Run in Fullscreen</label>
+        </div>
+    </div>
+
+    <canvas id="gazeCanvas" width="800" height="400"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gazeCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const speedSlider = document.getElementById('speedSlider');
+        const currentSpeedSpan = document.getElementById('currentSpeed');
+        const sizeSlider = document.getElementById('sizeSlider');
+        const currentSizeSpan = document.getElementById('currentSize');
+        const durationInput = document.getElementById('durationInput');
+        const currentDurationSpan = document.getElementById('currentDuration');
+        const shapeColorPicker = document.getElementById('shapeColorPicker');
+        const currentShapeColorSpan = document.getElementById('currentShapeColor');
+        const backgroundColorPicker = document.getElementById('backgroundColorPicker'); // New background color picker
+        const currentBackgroundColorSpan = document.getElementById('currentBackgroundColor'); // New background color span
+        const directionSelect = document.getElementById('directionSelect');
+        const shapeSelect = document.getElementById('shapeSelect'); // New shape select
+        const startButton = document.getElementById('startButton');
+        const stopButton = document.getElementById('stopButton');
+        const fullscreenCheckbox = document.getElementById('fullscreenCheckbox');
+
+        let animationFrameId;
+        let shape = {
+            x: 50,
+            y: canvas.height / 2,
+            size: parseInt(sizeSlider.value), // Renamed radius to size for generic use
+            color: shapeColorPicker.value,
+            dx: parseFloat(speedSlider.value),
+            dy: 0
+        };
+        let startTime = 0;
+        let durationMs = parseInt(durationInput.value) * 1000;
+        let currentDirection = directionSelect.value;
+        let currentShape = shapeSelect.value;
+        let currentBackgroundColor = backgroundColorPicker.value;
+
+        // Function to draw the shape
+        function drawShape() {
+            // Draw background first
+            ctx.fillStyle = currentBackgroundColor;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Clear shape area (optional, but good practice if not filling background entirely)
+            // ctx.clearRect(0, 0, canvas.width, canvas.height); // This clears the whole canvas
+
+            ctx.fillStyle = shape.color;
+            ctx.beginPath();
+
+            const halfSize = shape.size; // For square and diamond, size is half the side/diagonal
+
+            switch (currentShape) {
+                case 'dot':
+                    ctx.arc(shape.x, shape.y, halfSize, 0, Math.PI * 2);
+                    break;
+                case 'square':
+                    ctx.rect(shape.x - halfSize, shape.y - halfSize, halfSize * 2, halfSize * 2);
+                    break;
+                case 'diamond':
+                    ctx.moveTo(shape.x, shape.y - halfSize); // Top point
+                    ctx.lineTo(shape.x + halfSize, shape.y);   // Right point
+                    ctx.lineTo(shape.x, shape.y + halfSize);   // Bottom point
+                    ctx.lineTo(shape.x - halfSize, shape.y);   // Left point
+                    ctx.closePath();
+                    break;
+            }
+            ctx.fill();
+        }
+
+        // Function to generate a random speed value (positive or negative)
+        function getRandomSpeed(baseSpeed) {
+            const sign = Math.random() < 0.5 ? 1 : -1;
+            return baseSpeed * sign;
+        }
+
+        // Animation loop
+        function animate(currentTime) {
+            if (!startTime) startTime = currentTime;
+            const elapsedTime = currentTime - startTime;
+
+            if (elapsedTime >= durationMs) {
+                stopAnimation();
+                return;
+            }
+
+            switch (currentDirection) {
+                case 'horizontal':
+                    shape.x += shape.dx;
+                    break;
+                case 'vertical':
+                    shape.y += shape.dy;
+                    break;
+                case 'diagonal':
+                case 'random':
+                    shape.x += shape.dx;
+                    shape.y += shape.dy;
+                    break;
+            }
+
+            // Boundary checking (using shape.size for generic half-width/height)
+            const minX = shape.size;
+            const maxX = canvas.width - shape.size;
+            const minY = shape.size;
+            const maxY = canvas.height - shape.size;
+
+            // Bounce off horizontal walls
+            if (shape.x > maxX || shape.x < minX) {
+                shape.dx *= -1;
+                // Adjust position to prevent sticking
+                if (shape.x > maxX) shape.x = maxX;
+                else if (shape.x < minX) shape.x = minX;
+
+                if (currentDirection === 'random') {
+                     shape.dy = getRandomSpeed(parseFloat(speedSlider.value));
+                }
+            }
+
+            // Bounce off vertical walls
+            if (shape.y > maxY || shape.y < minY) {
+                shape.dy *= -1;
+                // Adjust position to prevent sticking
+                if (shape.y > maxY) shape.y = maxY;
+                else if (shape.y < minY) shape.y = minY;
+
+                if (currentDirection === 'random') {
+                    shape.dx = getRandomSpeed(parseFloat(speedSlider.value));
+                }
+            }
+
+            drawShape();
+
+            animationFrameId = requestAnimationFrame(animate);
+        }
+
+        // Start animation
+        function startAnimation() {
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+            }
+            startTime = 0;
+
+            const baseSpeed = parseFloat(speedSlider.value);
+
+            // Reset position and direction based on selected mode
+            switch (currentDirection) {
+                case 'horizontal':
+                    shape.dx = baseSpeed;
+                    shape.dy = 0;
+                    shape.x = shape.size; // Start from left edge
+                    shape.y = canvas.height / 2; // Keep centered vertically
+                    break;
+                case 'vertical':
+                    shape.dx = 0;
+                    shape.dy = baseSpeed;
+                    shape.x = canvas.width / 2; // Keep centered horizontally
+                    shape.y = shape.size; // Start from top edge
+                    break;
+                case 'diagonal':
+                    shape.dx = baseSpeed; // Move right
+                    shape.dy = -baseSpeed; // Move up
+                    shape.x = shape.size; // Start from bottom-left corner
+                    shape.y = canvas.height - shape.size;
+                    break;
+                case 'random':
+                    shape.dx = getRandomSpeed(baseSpeed);
+                    shape.dy = getRandomSpeed(baseSpeed);
+                    shape.x = canvas.width / 2;
+                    shape.y = canvas.height / 2;
+                    break;
+            }
+
+            startButton.disabled = true;
+            stopButton.disabled = false;
+
+            // Request fullscreen for the canvas ONLY if checkbox is checked
+            if (fullscreenCheckbox.checked) {
+                try {
+                    if (canvas.requestFullscreen) {
+                        canvas.requestFullscreen();
+                    } else if (canvas.webkitRequestFullscreen) { /* Safari */
+                        canvas.webkitRequestFullscreen();
+                    } else if (canvas.msRequestFullscreen) { /* IE11 */
+                        canvas.msRequestFullscreen();
+                    }
+                } catch (error) {
+                    console.error("Failed to enter fullscreen:", error);
+                    // Continue animation even if fullscreen fails
+                }
+            }
+
+            animate();
+        }
+
+        // Stop animation
+        function stopAnimation() {
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
+            startButton.disabled = false;
+            stopButton.disabled = true;
+            console.log("Animation stopped.");
+
+            // Exit fullscreen if currently in fullscreen AND the checkbox was checked
+            if (fullscreenCheckbox.checked && (document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement)) {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) { /* Safari */
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) { /* IE11 */
+                    document.msExitFullscreen();
+                }
+            }
+        }
+
+        // Event listener for exiting fullscreen (e.g., via Esc key)
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
+                // If exiting fullscreen, stop the animation
+                stopAnimation();
+            }
+        });
+        document.addEventListener('webkitfullscreenchange', () => { // For Safari
+            if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
+                stopAnimation();
+            }
+        });
+        document.addEventListener('msfullscreenchange', () => { // For IE11
+            if (!document.fullscreenElement && !document.msFullscreenElement && !document.webkitFullscreenElement) {
+                stopAnimation();
+            }
+        });
+
+
+        // Event Listeners for controls
+        speedSlider.addEventListener('input', (event) => {
+            const newSpeed = parseFloat(event.target.value);
+            // Update dx/dy while maintaining current direction sign
+            shape.dx = newSpeed * Math.sign(shape.dx || 1);
+            shape.dy = newSpeed * Math.sign(shape.dy || 1);
+            currentSpeedSpan.textContent = newSpeed.toFixed(1);
+        });
+
+        sizeSlider.addEventListener('input', (event) => {
+            shape.size = parseInt(event.target.value);
+            currentSizeSpan.textContent = `${shape.size} px`;
+            if (!animationFrameId) {
+                drawShape();
+            }
+        });
+
+        durationInput.addEventListener('input', (event) => {
+            durationMs = parseInt(event.target.value) * 1000;
+            currentDurationSpan.textContent = `${event.target.value} seconds`;
+        });
+
+        shapeColorPicker.addEventListener('input', (event) => {
+            shape.color = event.target.value;
+            currentShapeColorSpan.textContent = event.target.value;
+            if (!animationFrameId) {
+                drawShape();
+            }
+        });
+
+        backgroundColorPicker.addEventListener('input', (event) => {
+            currentBackgroundColor = event.target.value;
+            currentBackgroundColorSpan.textContent = event.target.value;
+            drawShape(); // Redraw immediately to update background
+        });
+
+        directionSelect.addEventListener('change', (event) => {
+            currentDirection = event.target.value;
+            stopAnimation();
+            drawShape();
+        });
+
+        shapeSelect.addEventListener('change', (event) => {
+            currentShape = event.target.value;
+            stopAnimation();
+            drawShape();
+        });
+
+        startButton.addEventListener('click', startAnimation);
+        stopButton.addEventListener('click', stopAnimation);
+
+        // Initial draw when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            drawShape();
+            stopButton.disabled = true;
+            currentSpeedSpan.textContent = parseFloat(speedSlider.value).toFixed(1);
+            currentSizeSpan.textContent = `${sizeSlider.value} px`;
+            currentDurationSpan.textContent = `${durationInput.value} seconds`;
+            currentShapeColorSpan.textContent = shapeColorPicker.value;
+            currentBackgroundColorSpan.textContent = backgroundColorPicker.value;
+        });
+
+        // Handle canvas resizing for responsiveness
+        function resizeCanvas() {
+            // When in fullscreen, canvas should occupy the full screen
+            if (document.fullscreenElement === canvas || document.webkitFullscreenElement === canvas || document.msFullscreenElement === canvas) {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            } else {
+                // When not in fullscreen, revert to responsive behavior based on container
+                const containerWidth = canvas.parentElement.clientWidth;
+                canvas.width = Math.min(containerWidth, 800);
+                canvas.height = canvas.width * 0.75; // Maintain a 4:3 aspect ratio
+            }
+
+            // Re-center shape after resize if not animating, or adjust its position if animating
+            if (!animationFrameId) {
+                shape.x = canvas.width / 2;
+                shape.y = canvas.height / 2;
+            } else {
+                // Adjust position to stay within new bounds if animating
+                shape.x = Math.max(shape.size, Math.min(shape.x, canvas.width - shape.size));
+                shape.y = Math.max(shape.size, Math.min(shape.y, canvas.height - shape.size));
+            }
+            drawShape(); // Redraw content after resize
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        // Initial resize call
+        resizeCanvas();
+
+    </script>
+</body>
+</html>

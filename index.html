@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>This is NOT for you</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f4f8; /* Light blue-gray background */
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .container {
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 15px; /* Rounded corners */
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1); /* Soft shadow */
+            text-align: center;
+            max-width: 700px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            color: #007bff; /* Vibrant blue heading */
+            margin-bottom: 25px;
+            font-size: 2.8em;
+            font-weight: 700;
+            line-height: 1.2;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 15px;
+        }
+
+        p {
+            font-size: 1.1em;
+            line-height: 1.6;
+            margin-bottom: 30px;
+            color: #555;
+        }
+
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Responsive grid */
+            gap: 20px; /* Space between buttons */
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        .nav-button {
+            display: inline-flex; /* Use flex for centering content */
+            align-items: center;
+            justify-content: center;
+            padding: 15px 25px;
+            background-color: #28a745; /* Green button */
+            color: white;
+            text-decoration: none; /* Remove underline from links */
+            border-radius: 10px; /* Rounded buttons */
+            font-size: 1.1em;
+            font-weight: 600;
+            transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+            text-align: center; /* Ensure text is centered */
+            white-space: nowrap; /* Prevent text wrapping */
+        }
+
+        .nav-button:hover {
+            background-color: #218838; /* Darker green on hover */
+            transform: translateY(-3px); /* Lift effect */
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25);
+        }
+
+        .nav-button:active {
+            transform: translateY(0); /* Press effect */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 600px) {
+            .container {
+                padding: 25px;
+            }
+            h1 {
+                font-size: 2em;
+            }
+            p {
+                font-size: 1em;
+            }
+            .button-grid {
+                grid-template-columns: 1fr; /* Stack buttons vertically on small screens */
+            }
+            .nav-button {
+                width: 100%; /* Full width buttons on small screens */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>This is NOT for you</h1>
+        <p>This is NOT for you.</p>
+
+        <div class="button-grid">
+            <!--
+                To add, remove, or change links:
+                1. To ADD: Copy and paste an existing <a> tag.
+                2. To REMOVE: Delete an <a> tag.
+                3. To CHANGE:
+                   - Update the 'href' attribute to the path of your page (e.g., "my-project/index.html", "about.html", "blog/page1.html").
+                   - Update the text inside the <a> tag (e.g., "My Awesome Project").
+            -->
+            <a href="gaze_exercise.html" class="nav-button">Link 1</a>
+            <a href="minimal_pair.html" class="nav-button">Link 2</a>
+            <a href="index.html" class="nav-button">Link 3</a>
+            <a href="index.html" class="nav-button">Link 4</a>
+            <a href="index.html" class="nav-button">Link 5</a>
+        </div>
+    </div>
+</body>
+</html>
