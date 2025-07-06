@@ -461,36 +461,11 @@
     </style>
   </head>
   <body class="loading">
-    <h1>Web Speech Synthesis Demo</h1>
-    <form>
-      <div id="textarea">
-        <textarea id="texttospeak">Call me Ishmael. Some years ago&#8212;never mind how long precisely&#8212;having little or no money in my purse, and nothing particular to interest me on shore, I thought I would sail about a little and see the watery part of the world.</textarea>
-        <div id="textbeingspoken"></div>
-      </div>
-      <div class="speecharg">
-        <label for="pitch">Pitch</label><input id="pitch" type="range" value="0.5" min="0" max="1" step="0.05"><button type="button" aria-label="Reset pitch" title="Reset pitch" onclick="resetPitch();">&#x21b6;</button>
-      </div>
-      <div class="speecharg">
-        <label for="rate">Rate</label><input id="rate" type="range" value="0" min="-3" max="3" step="0.25"><button type="button" aria-label="Reset rate" title="Reset rate" onclick="resetRate();">&#x21b6;</button>
-      </div>
-      <div class="speecharg">
-        <label for="volue">Volume</label><input id="volume" type="range" value="1" min="0" max="1" step="0.05"><button type="button" aria-label="Reset volume" title="Reset volume" onclick="resetVolume();">&#x21b6;</button>
-      </div>
-      <div class="speecharg">
-        <label for="voice">Voice</label><select id="voice"></select><button type="button" aria-label="Reset voice" title="Reset voice" onclick="resetVoice();">&#x21b6;</button>
-      </div>
-      <div class="bottom">
-        <div class="widebutton">
-          <button type="button" onmousedown="speak();"><strong>Speak it</strong></button>
-          <button type="button" id="preachit" onmousedown="stop(); speak();">Interrupt</button>
-        </div>
-        <button type="button" class="small" aria-label="Pause/Resume" title="Pause/Resume" onmousedown="playpause();"><img src="https://placehold.co/40x40/007bff/ffffff?text=Play/Pause" alt="Play/Pause"></button>
-        <button type="button" class="small" aria-label="Cancel" title="Cancel" onmousedown="stop();"><img src="https://placehold.co/40x40/dc3545/ffffff?text=Stop" alt="Stop"></button>
-      </div>
-      <div class="bottom">
-      </div>
-    </form>
-    <div id="marker"></div>
+    <!-- Removed main H1 -->
+
+    <!-- Removed original form with textarea and controls -->
+
+    <!-- Removed marker div -->
 
     <!-- Minimal Pairs Section -->
     <div class="controls" id="stickyControls">
@@ -539,20 +514,17 @@
     </div>
 
     <script type="text/javascript">
-        var texttospeak = document.getElementById('texttospeak');
-        var textbeingspoken = document.getElementById('textbeingspoken');
-        var marker = document.getElementById('marker');
-        var range = document.createRange();
-        var speechtext;
-        var firstBoundary;
+        // Removed texttospeak, textbeingspoken, marker, range, speechtext, firstBoundary as their HTML elements are removed.
+        // Their associated functions (speak, stop, playpause, handleSpeechEvent) are kept as per instruction,
+        // but will effectively be unused or non-functional without their corresponding DOM elements.
 
         var voices = [];
         // Renamed for clarity to avoid conflict with minimal pair's voiceSelect
-        var mainVoiceSelect = document.querySelector('#voice'); 
+        var mainVoiceSelect = document.querySelector('#voice'); // This element is now removed from HTML
 
         function populateVoiceList() {
           voices = window.speechSynthesis.getVoices();
-          mainVoiceSelect.innerHTML = ''; // Clear main voice select
+          // mainVoiceSelect.innerHTML = ''; // This line will now cause an error as mainVoiceSelect is null/undefined
           var minimalPairVoiceSelect = document.getElementById('voiceSelect'); // Get minimal pair voice select
           minimalPairVoiceSelect.innerHTML = ''; // Clear minimal pair voice select
 
@@ -567,7 +539,7 @@
 
           if (voices.length === 0) {
               console.warn("No voices available. This might be due to browser limitations or voices not being loaded yet.");
-              mainVoiceSelect.innerHTML = '<option value="">No Voices Available</option>';
+              // mainVoiceSelect.innerHTML = '<option value="">No Voices Available</option>'; // This will also error
               minimalPairVoiceSelect.innerHTML = '<option value="">No Voices Available</option>';
               return;
           }
@@ -575,27 +547,27 @@
           let defaultVoiceFound = false;
 
           for (var i = 0; i < voices.length; i++) {
-            var optionMain = document.createElement('option');
-            optionMain.innerHTML = voices[i].name + ' (' + voices[i].lang + ')';
-            optionMain.setAttribute('value', voices[i].voiceURI);
-            optionMain.voice = voices[i]; // Store voice object directly
+            // var optionMain = document.createElement('option'); // This is no longer needed
+            // optionMain.innerHTML = voices[i].name + ' (' + voices[i].lang + ')';
+            // optionMain.setAttribute('value', voices[i].voiceURI);
+            // optionMain.voice = voices[i]; // Store voice object directly
 
             var optionMinimal = document.createElement('option');
             optionMinimal.textContent = `${voices[i].name} (${voices[i].lang})`;
             optionMinimal.setAttribute('data-index', i); // Store index for minimal pair logic
 
             if (voices[i].default || (voices[i].lang === 'en-US' && !defaultVoiceFound)) {
-              optionMain.selected = true;
+              // optionMain.selected = true; // No longer needed
               optionMinimal.selected = true;
               defaultVoiceFound = true;
             }
-            mainVoiceSelect.appendChild(optionMain);
+            // mainVoiceSelect.appendChild(optionMain); // No longer needed
             minimalPairVoiceSelect.appendChild(optionMinimal);
           }
 
           // Fallback if no default or en-US voice was found
           if (!defaultVoiceFound && voices.length > 0) {
-              mainVoiceSelect.options[0].selected = true;
+              // mainVoiceSelect.options[0].selected = true; // No longer needed
               minimalPairVoiceSelect.options[0].selected = true;
           }
           console.log("Voice list populated. Total voices:", voices.length);
@@ -606,17 +578,32 @@
           speechSynthesis.onvoiceschanged = populateVoiceList;
 
         // Ensure voice selection in minimal pair section updates main voice selection
+        // This listener will now only update itself if mainVoiceSelect is removed
         document.getElementById('voiceSelect').addEventListener('change', function() {
             const selectedIndex = this.selectedIndex;
-            mainVoiceSelect.selectedIndex = selectedIndex;
+            // mainVoiceSelect.selectedIndex = selectedIndex; // This line will now cause an error
         });
 
         // Ensure main voice selection updates minimal pair section
-        mainVoiceSelect.addEventListener('change', function() {
-            const selectedIndex = this.selectedIndex;
-            document.getElementById('voiceSelect').selectedIndex = selectedIndex;
-        });
+        // This listener will now cause an error as mainVoiceSelect is null/undefined
+        // mainVoiceSelect.addEventListener('change', function() {
+        //     const selectedIndex = this.selectedIndex;
+        //     document.getElementById('voiceSelect').selectedIndex = selectedIndex;
+        // });
 
+        // These functions are kept as per instruction, but their elements are removed.
+        function resetPitch() {
+            // document.getElementById('pitch').value = 0.5; // This will error
+        }
+        function resetRate() {
+            // document.getElementById('rate').value = 0; // This will error
+        }
+        function resetVolume() {
+            // document.getElementById('volume').value = 1; // This will error
+        }
+        function resetVoice() {
+            // document.getElementById('default-voice').selected = true; // This will error
+        }
         function stop() {
           speechSynthesis.cancel();
         }
@@ -629,20 +616,27 @@
         }
 
         function speak() {
-          speechtext = texttospeak.value;
+          // speechtext = texttospeak.value; // This will error
           firstBoundary = true;
-          textbeingspoken.textContent = speechtext;
+          // textbeingspoken.textContent = speechtext; // This will error
 
           utterance = new SpeechSynthesisUtterance(
-            document.getElementById('texttospeak').value);
-          // Use the voice selected in the main dropdown
-          utterance.voice = voices[mainVoiceSelect.selectedIndex]; 
-          utterance.volume = document.getElementById('volume').value;
-          utterance.pitch = document.getElementById('pitch').value;
-          var rate = document.getElementById('rate').value;
-          utterance.rate = Math.pow(Math.abs(rate) + 1, rate < 0 ? -1 : 1);
+            // document.getElementById('texttospeak').value); // This will error
+            "Placeholder text for removed main text area." // Use placeholder for now
+            );
+          // Use the voice selected in the main dropdown (now removed)
+          // utterance.voice = voices[mainVoiceSelect.selectedIndex]; // This will error
+          utterance.voice = voices[document.getElementById('voiceSelect').selectedIndex]; // Use minimal pair voice select for main speak function
+          // utterance.volume = document.getElementById('volume').value; // This will error
+          // utterance.pitch = document.getElementById('pitch').value; // This will error
+          // var rate = document.getElementById('rate').value; // This will error
+          // utterance.rate = Math.pow(Math.abs(rate) + 1, rate < 0 ? -1 : 1); // This will error
+          utterance.volume = 1; // Default
+          utterance.pitch = 1; // Default
+          utterance.rate = 1; // Default
+
           utterance.addEventListener('start', function () {
-            marker.classList.remove('animate');
+            // marker.classList.remove('animate'); // This will error
             document.body.classList.add('speaking');
           });
           utterance.addEventListener('start', handleSpeechEvent);
@@ -657,7 +651,7 @@
           } else {
               console.warn("No valid voice selected for main text-to-speech.");
               document.body.classList.remove('speaking');
-              marker.classList.remove('moved');
+              // marker.classList.remove('moved'); // This will error
           }
         }
 
@@ -666,50 +660,52 @@
 
           switch (e.type) {
             case 'start':
-              marker.classList.remove('animate');
+              // marker.classList.remove('animate'); // This will error
               document.body.classList.add('speaking');
               break;
             case 'end':
             case 'endEvent':
             case 'error':
               document.body.classList.remove('speaking');
-              marker.classList.remove('moved');
+              // marker.classList.remove('moved'); // This will error
               break;
             case 'boundary':
             {
-              if (e.name != 'word')
-                break;
-              var substr = speechtext.slice(e.charIndex);
-              var rex = /\S+/g;
-              var res = rex.exec(substr);
-              if (!res) return;
-              var startOffset = res.index + e.charIndex;
-              var endOffset = rex.lastIndex + e.charIndex;
-              range.setStart(textbeingspoken.firstChild, startOffset);
-              range.setEnd(textbeingspoken.firstChild, endOffset);
-              var rect = range.getBoundingClientRect();
-              var delta = 0;
-              // do I need to scroll?
-              var parentRect = textbeingspoken.getBoundingClientRect();
-              if (rect.bottom > parentRect.bottom) {
-                delta = rect.bottom - parentRect.bottom;
-              }
-              if (rect.top < parentRect.top) {
-                delta = rect.top - parentRect.top;
-              }
+              // The following lines depend on textbeingspoken and marker, which are removed.
+              // This entire block will cause errors or be non-functional.
+              // if (e.name != 'word')
+              //   break;
+              // var substr = speechtext.slice(e.charIndex);
+              // var rex = /\S+/g;
+              // var res = rex.exec(substr);
+              // if (!res) return;
+              // var startOffset = res.index + e.charIndex;
+              // var endOffset = rex.lastIndex + e.charIndex;
+              // range.setStart(textbeingspoken.firstChild, startOffset);
+              // range.setEnd(textbeingspoken.firstChild, endOffset);
+              // var rect = range.getBoundingClientRect();
+              // var delta = 0;
+              // // do I need to scroll?
+              // var parentRect = textbeingspoken.getBoundingClientRect();
+              // if (rect.bottom > parentRect.bottom) {
+              //   delta = rect.bottom - parentRect.bottom;
+              // }
+              // if (rect.top < parentRect.top) {
+              //   delta = rect.top - parentRect.top;
+              // }
 
-              textbeingspoken.scrollTop += delta;
-              texttospeak.scrollTop = textbeingspoken.scrollTop;
+              // textbeingspoken.scrollTop += delta;
+              // texttospeak.scrollTop = textbeingspoken.scrollTop;
 
-              marker.style.top = rect.top - delta - 1;
-              marker.style.left = rect.left - 1;
-              marker.style.width = rect.width + 1;
-              marker.style.height = rect.height + 1;
-              marker.classList.add('moved');
-              if (firstBoundary) {
-                firstBoundary = false;
-                marker.classList.add('animate');
-              }
+              // marker.style.top = rect.top - delta - 1;
+              // marker.style.left = rect.left - 1;
+              // marker.style.width = rect.width + 1;
+              // marker.style.height = rect.height + 1;
+              // marker.classList.add('moved');
+              // if (firstBoundary) {
+              //   firstBoundary = false;
+              //   marker.classList.add('animate');
+              // }
               break;
             }
             default:
@@ -1060,6 +1056,8 @@
         ];
 
         // Minimal Pair Specific Elements (re-declared to avoid conflict with main script's var names)
+        // Note: texttospeak, textbeingspoken, marker, range, speechtext, firstBoundary are now unused
+        // as their corresponding HTML elements have been removed.
         const wordButtonsContainer = document.getElementById('wordButtonsContainer');
         const voiceSelect = document.getElementById('voiceSelect'); // This is the minimal pair voice select
 
@@ -1322,10 +1320,10 @@
 
         // --- Fix for initial empty space (adjusted for two control bars) ---
         window.addEventListener('load', () => {
-            const formHeight = document.querySelector('form').offsetHeight;
+            // No form element now, so only stickyControls height matters
             const stickyControlsHeight = stickyControls.offsetHeight;
-            mainContentWrapper.style.marginTop = (formHeight + stickyControlsHeight + 30) + 'px'; // Add some extra space
-            console.log("Form height:", formHeight, "Sticky controls height:", stickyControlsHeight, "px. Set main content margin-top.");
+            mainContentWrapper.style.marginTop = (stickyControlsHeight + 30) + 'px'; // Add some extra space
+            console.log("Sticky controls height:", stickyControlsHeight, "px. Set main content margin-top.");
         });
 
         // Initial call to generate minimal pair buttons when the DOM is ready
