@@ -22,7 +22,6 @@
         display: flex;
         flex-direction: column;
         flex-grow: 1; /* Allows this container to fill available vertical space */
-        /* Removed padding here, apply to inner sections to keep them within their flex-basis */
         box-sizing: border-box;
         max-width: 840px; /* Consistent max-width for both sections + padding */
         margin: 0 auto; /* Center the entire app container */
@@ -424,31 +423,42 @@
               gap: 10px;
           }
           .controls .control-group {
-              flex-direction: column;
-              align-items: flex-start;
-              width: 100%;
+              flex-wrap: nowrap; /* Prevent wrapping within a control group */
+              justify-content: space-between; /* Distribute items */
+              gap: 5px; /* Smaller gap */
           }
-          .controls select, .controls input[type="text"], .controls input[type="range"] {
-              width: 100%;
-              margin-right: 0;
+          .controls .control-group label,
+          .controls .control-group span {
+              font-size: 0.75em; /* Even smaller font size for labels and values */
+              min-width: unset; /* Allow them to shrink as much as needed */
+              flex-shrink: 0;
           }
-          .button-pair {
-              flex-direction: column;
-              width: 100%;
+          .controls .control-group input[type="text"],
+          .controls .control-group select {
+              flex-grow: 1;
+              min-width: 40px; /* Allow text inputs/selects to shrink more */
+              height: 1.8rem;
+              font-size: 0.8em;
+              padding: 3px 6px;
           }
-          .button-pair button {
-              width: 100%;
-              margin: 5px 0;
+          .controls .control-group input[type="range"] {
+              flex-grow: 1;
+              min-width: 50px; /* Allow slider to shrink more */
+              height: 6px; /* Make slider track thinner */
           }
-          .modal-content {
-              padding: 20px;
+          .controls .control-group button { /* Applies to reset and action buttons */
+              height: 1.8rem;
+              padding: 3px 8px;
+              font-size: 0.8em;
+              flex-shrink: 0; /* Prevent buttons from shrinking */
           }
-          .modal-buttons {
-              flex-direction: column;
-              gap: 10px;
+          /* Specific overrides for action buttons in the last control group */
+          .controls .control-group:last-of-type button {
+              padding: 8px 10px; /* Slightly more padding for these action buttons */
+              font-size: 0.85em; /* Slightly larger font for action buttons */
           }
-          .modal-buttons button {
-              max-width: 100%;
+          .app-container {
+              padding: 10px; /* Smaller padding for the whole container on mobile */
           }
       }
     </style>
@@ -903,8 +913,7 @@
         let currentPauseDurationMs = parseInt(pauseSlider.value);
         let correctWord = ''; // Variable to store the correct word for the test
 
-        // Flag to manage speech state for minimal pairs
-        let isSpeechInProgress = false;
+        // Removed isSpeechInProgress flag. Relying on synth.speaking.
 
         function populateVoiceList() {
           voices = synth.getVoices().sort((a, b) => {
@@ -954,23 +963,28 @@
             return voices[selectedIndex]; // Use the global 'voices' array
         }
 
-        // Helper function to wait for speech to stop (re-using main script's synth.cancel)
+        // Helper function to wait for speech to stop
         async function waitForSpeechToStopMinimalPairs() {
             if (synth.speaking) {
                 synth.cancel();
+                // Actively poll until synth.speaking is false, using requestAnimationFrame for efficiency
+                await new Promise(resolve => {
+                    const checkSpeechState = () => {
+                        if (!synth.speaking) {
+                            resolve();
+                        } else {
+                            requestAnimationFrame(checkSpeechState);
+                        }
+                    };
+                    requestAnimationFrame(checkSpeechState);
+                });
             }
-            while (synth.speaking) {
-                await new Promise(resolve => setTimeout(resolve, 50));
-            }
-            isSpeechInProgress = false;
         }
 
         // Speak function for minimal pairs
         async function speakWordMinimalPairs(word) {
             return new Promise(async (resolve) => {
-                await waitForSpeechToStopMinimalPairs();
-
-                isSpeechInProgress = true;
+                await waitForSpeechToStopMinimalPairs(); // Ensure previous speech is stopped
 
                 const utterance = new SpeechSynthesisUtterance(word);
                 utterance.voice = getSelectedVoiceForMinimalPairs();
@@ -979,13 +993,12 @@
                 utterance.volume = parseFloat(volumeSlider.value); // Use value from slider
 
                 utterance.onend = () => {
-                    isSpeechInProgress = false;
-                    resolve();
+                    resolve(); // Resolve when speech ends naturally
                 };
                 utterance.onerror = (event) => {
+                    // Log all errors, but always resolve to prevent infinite waiting in this context.
                     console.error('SpeechSynthesisUtterance.onerror (Minimal Pairs)', event.error, `Word: "${word}"`);
-                    isSpeechInProgress = false;
-                    resolve();
+                    resolve(); // Always resolve to allow the next operation to proceed
                 };
 
                 try {
@@ -993,13 +1006,11 @@
                         synth.speak(utterance);
                     } else {
                         console.warn("No valid voice selected for minimal pair speech, cannot speak.");
-                        isSpeechInProgress = false;
-                        resolve();
+                        resolve(); // Resolve immediately if no voice
                     }
                 } catch (e) {
                     console.error("Error calling speechSynthesis.speak (Minimal Pairs):", e);
-                    isSpeechInProgress = false;
-                    resolve();
+                    resolve(); // Resolve on unexpected error during speak call
                 }
             });
         }
