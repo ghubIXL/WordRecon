@@ -1,6 +1,6 @@
 <html>
   <head>
-    <title>Web Speech Synthesis Demo</title>
+    <title>Word Recognition Training</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -12,17 +12,32 @@
         color: #333;
         line-height: 1.6;
         margin: 0;
-        padding: 20px; /* Add some padding around the content */
+        padding: 0; /* Remove body padding, apply to inner container for flexbox */
         box-sizing: border-box;
+        display: flex; /* Use flexbox for overall layout */
+        flex-direction: column; /* Stack children vertically */
+        min-height: 100vh; /* Ensure body takes full viewport height */
+      }
+      .app-container { /* New container to hold all visible content */
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1; /* Allows this container to fill available vertical space */
+        /* Removed padding here, apply to inner sections to keep them within their flex-basis */
+        box-sizing: border-box;
+        max-width: 840px; /* Consistent max-width for both sections + padding */
+        margin: 0 auto; /* Center the entire app container */
+        height: 100vh; /* Ensure it takes full viewport height */
+        padding: 20px; /* Padding for the entire app container */
+        gap: 20px; /* Space between controls and mainContentWrapper */
       }
       h1 {
         color: #0056b3;
-        margin: 20px auto; /* Center heading */
+        margin: 0 auto 20px auto; /* Center heading, add bottom margin */
         text-align: center;
         font-size: 2.5em;
         border-bottom: 2px solid #0056b3;
         padding-bottom: 10px;
-        max-width: 800px; /* Limit width of main heading */
+        width: 100%; /* Ensure heading takes full width of app-container */
       }
       h2, h3, h4 {
         color: #0056b3;
@@ -30,22 +45,15 @@
         margin-bottom: 15px;
         font-weight: 600;
       }
-      form {
-        max-width: 480px;
-        margin: 0 auto;
-        padding: 20px;
-        background-color: #fff;
-        border-radius: 10px;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-        margin-bottom: 30px; /* Space below the main speech form */
-      }
+
+      /* Base button and select styles for consistency */
       button, select {
         background-color: #fff;
         border: none;
-        border-radius: 8px; /* Slightly more rounded */
-        height: 2.5rem; /* Increased height for better touch target */
-        padding: 0 15px; /* Added padding */
-        font-size: 1em; /* Standard font size */
+        border-radius: 8px;
+        height: 2.5rem;
+        padding: 0 15px;
+        font-size: 1em;
         cursor: pointer;
         transition: background-color 0.2s ease, transform 0.1s ease;
         box-shadow: 0 2px 5px rgba(0,0,0,0.1);
@@ -54,183 +62,187 @@
        -webkit-appearance: none;
        -moz-appearance: none;
        appearance: none;
-       padding-right: 30px; /* Space for custom arrow if needed */
+       padding-right: 30px;
      }
 
-     /* Some firefox range styling */
      input[type=range] {
       -moz-appearance: none;
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 8px;
+      background: #ddd;
+      outline: none;
+      opacity: 0.7;
+      transition: opacity .2s;
+      border-radius: 5px;
+     }
+     input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #007bff;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
      }
      input[type=range]::-moz-range-thumb {
-      background-color: #007bff; /* Changed to match button blue */
-      height: 1rem;
-      width: .5rem;
-      border-color: #007bff;
-      box-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #007bff;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
      }
-     input[type=range]::-moz-range-track {
-      background-color: #ddd; /* Lighter track */
+     input[type=range]::-ms-thumb {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #007bff;
+        cursor: pointer;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+     }
+     input[type=range]::-ms-track {
+        background: transparent;
+        border-color: transparent;
+        color: transparent;
+     }
+     input[type=range]::-ms-fill-lower {
+        background: #ddd;
+        border-radius: 5px;
+     }
+     input[type=range]::-ms-fill-upper {
+        background: #ddd;
+        border-radius: 5px;
      }
 
-      .speecharg {
-        height: 2.5rem; /* Match button height */
+      /* Top Controls Section - General Styling */
+      .controls {
+          width: 100%;
+          flex-basis: 33.33%; /* Occupy 1/3 of parent's height */
+          flex-shrink: 0; /* Prevent shrinking */
+          overflow-y: auto; /* Enable vertical scrolling */
+          background-color: #fff; /* Match lower section background */
+          padding: 15px 20px;
+          border: 1px solid #ddd; /* Match lower section border */
+          border-radius: 10px; /* Match lower section border-radius */
+          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05); /* Match lower section shadow */
+          z-index: 1000;
+          display: flex;
+          flex-direction: column; /* Stack control groups vertically */
+          gap: 5px; /* Smaller gap between control groups */
+          box-sizing: border-box;
+          /* Removed margin-bottom as gap handles spacing in app-container */
+      }
+      .controls .control-group:last-of-type {
+        margin-bottom: 0; /* No margin after the last group */
+      }
+
+      /* Top Controls - Compact Group Styling */
+      .controls .control-group {
         display: flex;
-        justify-content: space-between;
         align-items: center;
-        margin-bottom: 15px; /* Space between controls */
+        gap: 8px; /* Gap between elements in a group */
+        margin-bottom: 8px; /* Smaller margin between control groups */
       }
-      .speecharg label {
-        display: inline-block;
-        width: 25%; /* Adjusted width */
+      .controls .control-group label {
+        white-space: nowrap;
         font-weight: 500;
+        color: #555;
+        flex-shrink: 0; /* Prevent label from shrinking */
+        width: auto; /* Allow label to take natural width */
+        min-width: 50px; /* Minimum width for labels */
       }
-      .speecharg input[type="range"], .speecharg select {
-        display: inline-block;
-        width: calc(75% - 3rem); /* Adjusted width */
-        margin: 0;
+      .controls .control-group select,
+      .controls .control-group input[type="text"],
+      .controls .control-group input[type="range"] {
+        flex-grow: 1; /* Allow inputs to take remaining space */
+        height: 2rem; /* Compact height */
+        padding: 4px 8px; /* Compact padding */
+        font-size: 0.85em; /* Smaller font size */
+        border: 1px solid #ccc; /* Add border for text inputs/select */
+        border-radius: 5px; /* Slightly less rounded for compactness */
       }
-      .speecharg button {
-        width: 2.5rem; /* Square reset buttons */
-        height: 2.5rem;
-        margin: 0 0 0 1rem; /* Reduced margin */
-        padding: 0;
+      .controls .control-group span { /* For value labels (1.0, 1.0 sec) */
+        white-space: nowrap;
+        font-size: 0.85em;
+        font-weight: bold;
+        color: #0056b3;
+        flex-shrink: 0; /* Prevent from shrinking */
+        min-width: 40px; /* Give some minimum space */
+        text-align: right;
+      }
+
+      /* Reset Button Styling (Matching lower section buttons) */
+      .controls .control-group button.reset-button {
+        height: 2rem; /* Match input height */
+        width: auto; /* Auto width for text */
+        padding: 4px 10px; /* Padding for text */
+        font-size: 0.85em; /* Match input font size */
         background-color: #6c757d; /* Grey for reset */
         color: white;
+        border-radius: 6px; /* Match lower section button radius */
+        box-shadow: 0 3px 6px rgba(0,0,0,0.1); /* Match lower section shadow */
+        transition: background-color 0.2s ease, transform 0.1s ease;
       }
-      .speecharg button:hover {
+      .controls .control-group button.reset-button:hover {
         background-color: #5a6268;
+        transform: translateY(-1px);
       }
 
-      .bottom {
-        margin-top: 20px; /* More space above action buttons */
-        display: flex;
-        justify-content: space-between;
-        gap: 15px; /* Space between button groups */
-      }
-      .bottom > div {
-        flex: 1; /* Allow widebutton to take available space */
-      }
-      .bottom button.small {
-        height: 3.5rem; /* Larger touch target */
-        width: 3.5rem;
-        padding: 0;
-        border-radius: 50%; /* Circular buttons */
-        background-color: #007bff; /* Blue for play/pause */
+      /* Top Section Action Buttons (Word 1, Word 2, First, Second, Listen Pair, Test) */
+      .controls .control-group button.play-word,
+      .controls .control-group button.listen-pair,
+      .controls .control-group button.test-pair {
+        padding: 10px 15px; /* Match lower section buttons */
+        font-size: 0.95em; /* Match lower section buttons */
+        border-radius: 6px; /* Match lower section buttons */
+        height: auto; /* Auto height for text content */
+        background-color: #28a745; /* Default green */
         color: white;
+        box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+        flex-grow: 1; /* Allow them to grow within their group */
+        min-width: unset; /* Remove min-width inherited from general button */
       }
-      .bottom button.small:hover {
-        background-color: #0056b3;
+      .controls .control-group button.play-word:hover,
+      .controls .control-group button.listen-pair:hover,
+      .controls .control-group button.test-pair:hover {
+        background-color: #218838;
+        transform: translateY(-1px);
       }
-      .bottom button.small img {
-        width: 60%; /* Make icons smaller */
-        height: auto;
-        display: block;
-        margin: auto;
+      .controls .control-group button.listen-pair {
+          background-color: #007bff;
       }
-
-      .widebutton {
-        width: auto; /* Let flexbox handle width */
-        display: flex;
-        flex-direction: column;
-        gap: 10px; /* Space between stacked buttons */
+      .controls .control-group button.listen-pair:hover {
+          background-color: #0056b3;
       }
-      .widebutton > button {
-        display: block;
-        width: 100%;
-        background-color: #28a745; /* Green for Speak It */
-        color: white;
+      .controls .control-group button.test-pair {
+          background-color: #ffc107;
+          color: #333;
       }
-      .widebutton > button#preachit {
-        background-color: #dc3545; /* Red for Interrupt */
-      }
-      .widebutton > button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+      .controls .control-group button.test-pair:hover {
+          background-color: #e0a800;
       }
 
-      #textarea {
-         width: 100%;
-         height: 8rem;
-         display: block;
-         margin-bottom: 1rem;
-         border-radius: 5px;
-         position: relative;
-         background-color: #fff;
-         transition: background-color 100ms ease;
-         -webkit-transition: background-color 100ms ease;
-         box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
-       }
 
-       .speaking #textarea {
-        background-color: #e6ffe6; /* Light green when speaking */
-       }
-
-      #textarea > * {
-        position: absolute;
-        display: block;
-        border: none;
-        resize: none;
-        top: 0;
-        left: 0;
-        width: calc(100% - 1rem);
-        height: calc(100% - 1rem);
-        margin: .5rem;
-        padding: 0;
-        white-space: pre-wrap;
-        line-height: 1.1rem;
-        background-color: transparent;
-        font-size: 14px; /* Slightly larger font */
-        font-family: 'Inter', sans-serif; /* Use Inter font */
-        color: #333;
+      /* Minimal Pair Section (Bottom) - Existing styles, ensuring consistency */
+      #mainContentWrapper {
+          flex-basis: 66.66%; /* Occupy 2/3 of parent's height */
+          flex-grow: 1; /* Allows content to take remaining vertical space */
+          overflow-y: auto; /* Allows content to scroll independently */
+          padding-top: 5px; /* Small padding at the top of the scrollable area */
+          box-sizing: border-box; /* Include padding/border in width */
       }
-
-      #textbeingspoken {
-        color: #555; /* Darker grey for spoken text */
-        visibility: hidden;
-        opacity: 0;
-        overflow: auto;
-        transition: all 100ms ease;
-        -webkit-transition: all 100ms ease;
-       }
-
-       .speaking #textbeingspoken {
-        visibility: visible;
-        opacity: 1;
-       }
-
-      a#gh {
-        color: #333;
-        text-align: right;
-        display: block;
-        font-style: italic;
-        margin-top: 20px;
-      }
-
-      #marker {
-        position: absolute;
-        visibility: hidden;
-        border: 2px solid #ffc107; /* Orange marker */
-        border-radius: 3px;
-        background-color: rgba(255, 193, 7, 0.2); /* Light orange background */
-      }
-
-      #marker.moved {
-        visibility: visible;
-      }
-      #marker.animate {
-        transition: all 50ms ease;
-        -webkit-transition: all 50ms ease;
-      }
-
-      /* Minimal Pair Specific Styles */
       .category-container, .subcategory-container, .contrast-group {
-          margin: 0 auto 30px auto; /* Center and add margin */
+          margin: 0 auto 30px auto;
           padding: 20px;
           border: 1px solid #ddd;
           border-radius: 10px;
           background-color: #fff;
           box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-          max-width: 800px; /* Max width for categories */
+          width: 100%; /* Ensure they take full width of mainContentWrapper */
+          box-sizing: border-box; /* Include padding/border in width */
       }
       .subcategory-container {
           margin-top: 20px;
@@ -275,66 +287,47 @@
           gap: 10px;
       }
       .button-pair button {
-          padding: 10px 15px; /* Slightly smaller padding for these buttons */
+          padding: 10px 15px;
           font-size: 0.95em;
           border-radius: 6px;
-          height: auto; /* Auto height for text content */
+          height: auto;
+          background-color: #28a745;
+          color: white;
+          box-shadow: 0 3px 6px rgba(0,0,0,0.1);
       }
-      button.listen-pair {
+      .button-pair button:hover {
+          background-color: #218838;
+          transform: translateY(-1px);
+      }
+      /* Specific colors for listen/test buttons in lower section */
+      .button-pair button.listen-pair {
           background-color: #007bff;
       }
-      button.listen-pair:hover {
+      .button-pair button.listen-pair:hover {
           background-color: #0056b3;
       }
-      button.test-pair {
+      .button-pair button.test-pair {
           background-color: #ffc107;
           color: #333;
       }
-      button.test-pair:hover {
+      .button-pair button.test-pair:hover {
           background-color: #e0a800;
       }
+
       #pauseValue {
           min-width: 70px;
           text-align: center;
           font-weight: bold;
           color: #0056b3;
       }
-      .controls {
-          position: sticky;
-          top: 0;
-          width: 100%;
-          background-color: #f4f4f4;
-          padding: 15px 20px;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-          z-index: 1000;
-          display: flex;
-          flex-wrap: wrap;
-          align-items: center;
-          gap: 15px;
-          box-sizing: border-box;
-          border-bottom: 1px solid #ddd;
-      }
-      .controls label {
-          white-space: nowrap;
-          font-weight: 500;
-          color: #555;
-      }
-      .controls .control-group {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          flex-wrap: wrap;
-      }
+
       #loadingStatus {
           font-weight: bold;
           color: #dc3545;
           margin-top: 10px;
       }
-      #mainContentWrapper {
-          margin-top: 0; /* Will be set by JS */
-      }
 
-      /* Custom Modal Styles */
+      /* Custom Modal Styles (unchanged) */
       .modal-overlay {
           position: fixed;
           top: 0;
@@ -461,45 +454,62 @@
     </style>
   </head>
   <body class="loading">
-    <!-- Removed main H1 -->
+    <div class="app-container">
+        <h1>Word Recognition Training</h1>
 
-    <!-- Removed original form with textarea and controls -->
+        <!-- Top Controls Section -->
+        <div class="controls" id="stickyControls">
+            <div class="control-group">
+                <label for="voiceSelect">Select Voice:</label>
+                <select id="voiceSelect"></select>
+            </div>
 
-    <!-- Removed marker div -->
+            <div class="control-group">
+                <label for="pitchSlider">Pitch:</label>
+                <input id="pitchSlider" type="range" value="1" min="0" max="2" step="0.1">
+                <span id="pitchValue">1.0</span>
+                <button type="button" class="reset-button" aria-label="Reset pitch" title="Reset pitch" onclick="resetPitch();">Reset</button>
+            </div>
+            <div class="control-group">
+                <label for="rateSlider">Rate:</label>
+                <input id="rateSlider" type="range" value="1" min="0.1" max="10" step="0.1">
+                <span id="rateValue">1.0</span>
+                <button type="button" class="reset-button" aria-label="Reset rate" title="Reset rate" onclick="resetRate();">Reset</button>
+            </div>
+            <div class="control-group">
+                <label for="volumeSlider">Volume:</label>
+                <input id="volumeSlider" type="range" value="1" min="0" max="1" step="0.05">
+                <span id="volumeValue">1.0</span>
+                <button type="button" class="reset-button" aria-label="Reset volume" title="Reset volume" onclick="resetVolume();">Reset</button>
+            </div>
 
-    <!-- Minimal Pairs Section -->
-    <div class="controls" id="stickyControls">
-        <div class="control-group">
-            <label for="voiceSelect">Select Voice:</label>
-            <select id="voiceSelect"></select>
+            <div class="control-group">
+                <label for="pauseSlider">Pause:</label>
+                <input type="range" id="pauseSlider" min="100" max="3000" value="1000" step="100">
+                <span id="pauseValue">1.0 sec</span>
+            </div>
+
+            <div class="control-group">
+                <label for="textBox1">Word 1:</label>
+                <input type="text" id="textBox1" value="Red">
+                <label for="textBox2">Word 2:</label>
+                <input type="text" id="textBox2" value="Read">
+            </div>
+
+            <div class="control-group">
+                <button id="speakFirstWordButton" class="play-word">First</button>
+                <button id="speakSecondWordButton" class="play-word">Second</button>
+                <button id="speakCustomPairButton" class="listen-pair">Listen Pair</button>
+                <button id="testCustomPairButton" class="test-pair">Test</button>
+            </div>
         </div>
 
-        <div class="control-group">
-            <label for="pauseSlider">Pause:</label>
-            <input type="range" id="pauseSlider" min="100" max="3000" value="1000" step="100">
-            <span id="pauseValue">1.0 sec</span>
+        <div id="mainContentWrapper">
+            <div id="wordButtonsContainer">
+                <!-- Word categories and buttons will be dynamically loaded here -->
+            </div>
         </div>
-
-        <div class="control-group">
-            <label for="textBox1">Word 1:</label>
-            <input type="text" id="textBox1" value="Red">
-            <label for="textBox2">Word 2:</label>
-            <input type="text" id="textBox2" value="Read">
-        </div>
-
-        <div class="control-group">
-            <button id="speakFirstWordButton" class="play-word">First</button>
-            <button id="speakSecondWordButton" class="play-word">Second</button>
-            <button id="speakCustomPairButton" class="listen-pair">Listen Pair</button>
-            <button id="testCustomPairButton" class="test-pair">Test</button>
-        </div>
-    </div>
-
-    <div id="mainContentWrapper">
-        <div id="wordButtonsContainer">
-            <!-- Word categories and buttons will be dynamically loaded here -->
-        </div>
-    </div>
+    </div> <!-- End of app-container -->
 
     <!-- Custom Modal for Test Functionality -->
     <div id="testModal" class="modal-overlay" style="display: none;">
@@ -514,207 +524,6 @@
     </div>
 
     <script type="text/javascript">
-        // Removed texttospeak, textbeingspoken, marker, range, speechtext, firstBoundary as their HTML elements are removed.
-        // Their associated functions (speak, stop, playpause, handleSpeechEvent) are kept as per instruction,
-        // but will effectively be unused or non-functional without their corresponding DOM elements.
-
-        var voices = [];
-        // Renamed for clarity to avoid conflict with minimal pair's voiceSelect
-        var mainVoiceSelect = document.querySelector('#voice'); // This element is now removed from HTML
-
-        function populateVoiceList() {
-          voices = window.speechSynthesis.getVoices();
-          // mainVoiceSelect.innerHTML = ''; // This line will now cause an error as mainVoiceSelect is null/undefined
-          var minimalPairVoiceSelect = document.getElementById('voiceSelect'); // Get minimal pair voice select
-          minimalPairVoiceSelect.innerHTML = ''; // Clear minimal pair voice select
-
-          // Sort voices for consistent order
-          voices.sort((a, b) => {
-              const aname = a.name.toUpperCase();
-              const bname = b.name.toUpperCase();
-              if (aname < bname) return -1;
-              if (aname > bname) return +1;
-              return 0;
-          });
-
-          if (voices.length === 0) {
-              console.warn("No voices available. This might be due to browser limitations or voices not being loaded yet.");
-              // mainVoiceSelect.innerHTML = '<option value="">No Voices Available</option>'; // This will also error
-              minimalPairVoiceSelect.innerHTML = '<option value="">No Voices Available</option>';
-              return;
-          }
-
-          let defaultVoiceFound = false;
-
-          for (var i = 0; i < voices.length; i++) {
-            // var optionMain = document.createElement('option'); // This is no longer needed
-            // optionMain.innerHTML = voices[i].name + ' (' + voices[i].lang + ')';
-            // optionMain.setAttribute('value', voices[i].voiceURI);
-            // optionMain.voice = voices[i]; // Store voice object directly
-
-            var optionMinimal = document.createElement('option');
-            optionMinimal.textContent = `${voices[i].name} (${voices[i].lang})`;
-            optionMinimal.setAttribute('data-index', i); // Store index for minimal pair logic
-
-            if (voices[i].default || (voices[i].lang === 'en-US' && !defaultVoiceFound)) {
-              // optionMain.selected = true; // No longer needed
-              optionMinimal.selected = true;
-              defaultVoiceFound = true;
-            }
-            // mainVoiceSelect.appendChild(optionMain); // No longer needed
-            minimalPairVoiceSelect.appendChild(optionMinimal);
-          }
-
-          // Fallback if no default or en-US voice was found
-          if (!defaultVoiceFound && voices.length > 0) {
-              // mainVoiceSelect.options[0].selected = true; // No longer needed
-              minimalPairVoiceSelect.options[0].selected = true;
-          }
-          console.log("Voice list populated. Total voices:", voices.length);
-        }
-
-        populateVoiceList();
-        if (speechSynthesis.onvoiceschanged !== undefined)
-          speechSynthesis.onvoiceschanged = populateVoiceList;
-
-        // Ensure voice selection in minimal pair section updates main voice selection
-        // This listener will now only update itself if mainVoiceSelect is removed
-        document.getElementById('voiceSelect').addEventListener('change', function() {
-            const selectedIndex = this.selectedIndex;
-            // mainVoiceSelect.selectedIndex = selectedIndex; // This line will now cause an error
-        });
-
-        // Ensure main voice selection updates minimal pair section
-        // This listener will now cause an error as mainVoiceSelect is null/undefined
-        // mainVoiceSelect.addEventListener('change', function() {
-        //     const selectedIndex = this.selectedIndex;
-        //     document.getElementById('voiceSelect').selectedIndex = selectedIndex;
-        // });
-
-        // These functions are kept as per instruction, but their elements are removed.
-        function resetPitch() {
-            // document.getElementById('pitch').value = 0.5; // This will error
-        }
-        function resetRate() {
-            // document.getElementById('rate').value = 0; // This will error
-        }
-        function resetVolume() {
-            // document.getElementById('volume').value = 1; // This will error
-        }
-        function resetVoice() {
-            // document.getElementById('default-voice').selected = true; // This will error
-        }
-        function stop() {
-          speechSynthesis.cancel();
-        }
-
-        function playpause() {
-          if (speechSynthesis.paused)
-            speechSynthesis.resume();
-          else
-            speechSynthesis.pause();
-        }
-
-        function speak() {
-          // speechtext = texttospeak.value; // This will error
-          firstBoundary = true;
-          // textbeingspoken.textContent = speechtext; // This will error
-
-          utterance = new SpeechSynthesisUtterance(
-            // document.getElementById('texttospeak').value); // This will error
-            "Placeholder text for removed main text area." // Use placeholder for now
-            );
-          // Use the voice selected in the main dropdown (now removed)
-          // utterance.voice = voices[mainVoiceSelect.selectedIndex]; // This will error
-          utterance.voice = voices[document.getElementById('voiceSelect').selectedIndex]; // Use minimal pair voice select for main speak function
-          // utterance.volume = document.getElementById('volume').value; // This will error
-          // utterance.pitch = document.getElementById('pitch').value; // This will error
-          // var rate = document.getElementById('rate').value; // This will error
-          // utterance.rate = Math.pow(Math.abs(rate) + 1, rate < 0 ? -1 : 1); // This will error
-          utterance.volume = 1; // Default
-          utterance.pitch = 1; // Default
-          utterance.rate = 1; // Default
-
-          utterance.addEventListener('start', function () {
-            // marker.classList.remove('animate'); // This will error
-            document.body.classList.add('speaking');
-          });
-          utterance.addEventListener('start', handleSpeechEvent);
-          utterance.addEventListener('end', handleSpeechEvent);
-          utterance.addEventListener('error', handleSpeechEvent);
-          utterance.addEventListener('boundary', handleSpeechEvent);
-          utterance.addEventListener('pause', handleSpeechEvent);
-          utterance.addEventListener('resume', handleSpeechEvent);
-
-          if (utterance.voice) { // Only speak if a valid voice is selected
-              speechSynthesis.speak(utterance);
-          } else {
-              console.warn("No valid voice selected for main text-to-speech.");
-              document.body.classList.remove('speaking');
-              // marker.classList.remove('moved'); // This will error
-          }
-        }
-
-        function handleSpeechEvent(e) {
-          console.log('Speech Event:', e);
-
-          switch (e.type) {
-            case 'start':
-              // marker.classList.remove('animate'); // This will error
-              document.body.classList.add('speaking');
-              break;
-            case 'end':
-            case 'endEvent':
-            case 'error':
-              document.body.classList.remove('speaking');
-              // marker.classList.remove('moved'); // This will error
-              break;
-            case 'boundary':
-            {
-              // The following lines depend on textbeingspoken and marker, which are removed.
-              // This entire block will cause errors or be non-functional.
-              // if (e.name != 'word')
-              //   break;
-              // var substr = speechtext.slice(e.charIndex);
-              // var rex = /\S+/g;
-              // var res = rex.exec(substr);
-              // if (!res) return;
-              // var startOffset = res.index + e.charIndex;
-              // var endOffset = rex.lastIndex + e.charIndex;
-              // range.setStart(textbeingspoken.firstChild, startOffset);
-              // range.setEnd(textbeingspoken.firstChild, endOffset);
-              // var rect = range.getBoundingClientRect();
-              // var delta = 0;
-              // // do I need to scroll?
-              // var parentRect = textbeingspoken.getBoundingClientRect();
-              // if (rect.bottom > parentRect.bottom) {
-              //   delta = rect.bottom - parentRect.bottom;
-              // }
-              // if (rect.top < parentRect.top) {
-              //   delta = rect.top - parentRect.top;
-              // }
-
-              // textbeingspoken.scrollTop += delta;
-              // texttospeak.scrollTop = textbeingspoken.scrollTop;
-
-              // marker.style.top = rect.top - delta - 1;
-              // marker.style.left = rect.left - 1;
-              // marker.style.width = rect.width + 1;
-              // marker.style.height = rect.height + 1;
-              // marker.classList.add('moved');
-              // if (firstBoundary) {
-              //   firstBoundary = false;
-              //   marker.classList.add('animate');
-              // }
-              break;
-            }
-            default:
-              break;
-          }
-        }
-
-        // --- Minimal Pairs Specific Logic (Integrated) ---
-
         // Embedded JSON Data for Minimal Pairs
         const embeddedWordData = [
             {
@@ -1055,11 +864,13 @@
             }
         ];
 
-        // Minimal Pair Specific Elements (re-declared to avoid conflict with main script's var names)
-        // Note: texttospeak, textbeingspoken, marker, range, speechtext, firstBoundary are now unused
-        // as their corresponding HTML elements have been removed.
+
+        var voices = [];
+        const synth = window.speechSynthesis; // Re-declare synth for scope
+
+        // Minimal Pair Specific Elements
         const wordButtonsContainer = document.getElementById('wordButtonsContainer');
-        const voiceSelect = document.getElementById('voiceSelect'); // This is the minimal pair voice select
+        const voiceSelect = document.getElementById('voiceSelect'); // This is the primary voice select now
 
         const textBox1 = document.getElementById('textBox1');
         const textBox2 = document.getElementById('textBox2');
@@ -1072,6 +883,15 @@
         const pauseValue = document.getElementById('pauseValue');
         const stickyControls = document.getElementById('stickyControls');
         const mainContentWrapper = document.getElementById('mainContentWrapper');
+
+        // New slider elements
+        const pitchSlider = document.getElementById('pitchSlider');
+        const pitchValue = document.getElementById('pitchValue');
+        const rateSlider = document.getElementById('rateSlider');
+        const rateValue = document.getElementById('rateValue');
+        const volumeSlider = document.getElementById('volumeSlider');
+        const volumeValue = document.getElementById('volumeValue');
+
 
         // Modal elements
         const testModal = document.getElementById('testModal');
@@ -1086,6 +906,48 @@
         // Flag to manage speech state for minimal pairs
         let isSpeechInProgress = false;
 
+        function populateVoiceList() {
+          voices = synth.getVoices().sort((a, b) => {
+              const aname = a.name.toUpperCase();
+              const bname = b.name.toUpperCase();
+              if (aname < bname) return -1;
+              if (aname > bname) return +1;
+              return 0;
+          });
+
+          voiceSelect.innerHTML = ''; // Clear minimal pair voice select
+
+          if (voices.length === 0) {
+              console.warn("No voices available. This might be due to browser limitations or voices not being loaded yet.");
+              voiceSelect.innerHTML = '<option value="">No Voices Available</option>';
+              return;
+          }
+
+          let defaultVoiceFound = false;
+
+          for (var i = 0; i < voices.length; i++) {
+            var option = document.createElement('option');
+            option.textContent = `${voices[i].name} (${voices[i].lang})`;
+            option.setAttribute('data-index', i); // Store index for minimal pair logic
+
+            if (voices[i].default || (voices[i].lang === 'en-US' && !defaultVoiceFound)) {
+              option.selected = true;
+              defaultVoiceFound = true;
+            }
+            voiceSelect.appendChild(option);
+          }
+
+          // Fallback if no default or en-US voice was found
+          if (!defaultVoiceFound && voices.length > 0) {
+              voiceSelect.options[0].selected = true;
+          }
+          console.log("Voice list populated. Total voices:", voices.length);
+        }
+
+        populateVoiceList();
+        if (synth.onvoiceschanged !== undefined)
+          synth.onvoiceschanged = populateVoiceList;
+
         // Helper function to get the selected voice for minimal pairs
         function getSelectedVoiceForMinimalPairs() {
             const selectedIndex = voiceSelect.selectedIndex;
@@ -1094,10 +956,10 @@
 
         // Helper function to wait for speech to stop (re-using main script's synth.cancel)
         async function waitForSpeechToStopMinimalPairs() {
-            if (speechSynthesis.speaking) {
-                speechSynthesis.cancel();
+            if (synth.speaking) {
+                synth.cancel();
             }
-            while (speechSynthesis.speaking) {
+            while (synth.speaking) {
                 await new Promise(resolve => setTimeout(resolve, 50));
             }
             isSpeechInProgress = false;
@@ -1112,8 +974,9 @@
 
                 const utterance = new SpeechSynthesisUtterance(word);
                 utterance.voice = getSelectedVoiceForMinimalPairs();
-                utterance.pitch = 1;
-                utterance.rate = 1;
+                utterance.pitch = parseFloat(pitchSlider.value); // Use value from slider
+                utterance.rate = parseFloat(rateSlider.value);   // Use value from slider
+                utterance.volume = parseFloat(volumeSlider.value); // Use value from slider
 
                 utterance.onend = () => {
                     isSpeechInProgress = false;
@@ -1127,7 +990,7 @@
 
                 try {
                     if (utterance.voice) {
-                        speechSynthesis.speak(utterance);
+                        synth.speak(utterance);
                     } else {
                         console.warn("No valid voice selected for minimal pair speech, cannot speak.");
                         isSpeechInProgress = false;
@@ -1277,7 +1140,7 @@
             });
         }
 
-        // --- Event Listeners for new custom text boxes/buttons (Minimal Pairs) ---
+        // --- Event Listeners for custom text boxes/buttons (Minimal Pairs) ---
         speakFirstWordButton.addEventListener('click', () => {
             speakWordMinimalPairs(textBox1.value);
         });
@@ -1312,18 +1175,48 @@
             showTestModalMinimalPairs(pair);
         });
 
+        // --- Event Listeners for Pitch, Rate, Volume Sliders ---
+        pitchSlider.addEventListener('input', () => {
+            pitchValue.textContent = parseFloat(pitchSlider.value).toFixed(1);
+        });
+        rateSlider.addEventListener('input', () => {
+            rateValue.textContent = parseFloat(rateSlider.value).toFixed(1);
+        });
+        volumeSlider.addEventListener('input', () => {
+            volumeValue.textContent = parseFloat(volumeSlider.value).toFixed(1);
+        });
+
+        // Reset functions for sliders
+        function resetPitch() {
+            pitchSlider.value = 1;
+            pitchValue.textContent = '1.0';
+        }
+        function resetRate() {
+            rateSlider.value = 1;
+            rateValue.textContent = '1.0';
+        }
+        function resetVolume() {
+            volumeSlider.value = 1;
+            volumeValue.textContent = '1.0';
+        }
+
         // --- Event Listener for Pause Slider ---
         pauseSlider.addEventListener('input', () => {
             currentPauseDurationMs = parseInt(pauseSlider.value);
             pauseValue.textContent = (currentPauseDurationMs / 1000).toFixed(1) + " sec";
         });
 
-        // --- Fix for initial empty space (adjusted for two control bars) ---
-        window.addEventListener('load', () => {
-            // No form element now, so only stickyControls height matters
-            const stickyControlsHeight = stickyControls.offsetHeight;
-            mainContentWrapper.style.marginTop = (stickyControlsHeight + 30) + 'px'; // Add some extra space
-            console.log("Sticky controls height:", stickyControlsHeight, "px. Set main content margin-top.");
+        // Event Delegation for Dynamically Generated Buttons
+        wordButtonsContainer.addEventListener('click', (event) => {
+            const target = event.target;
+            if (target.tagName === 'BUTTON') {
+                // Single word buttons
+                if (target.hasAttribute('data-word1') && !target.classList.contains('listen-pair') && !target.classList.contains('test-pair')) {
+                    speakWordMinimalPairs(target.getAttribute('data-word1'));
+                } else if (target.hasAttribute('data-word2') && !target.classList.contains('listen-pair') && !target.classList.contains('test-pair')) {
+                    speakWordMinimalPairs(target.getAttribute('data-word2'));
+                }
+            }
         });
 
         // Initial call to generate minimal pair buttons when the DOM is ready
