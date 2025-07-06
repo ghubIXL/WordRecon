@@ -1,328 +1,498 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
+<html>
+  <head>
+    <title>Web Speech Synthesis Demo</title>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Word Recognition Training</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Inter', sans-serif; /* Using Inter font */
-            margin: 0;
-            background-color: #f4f4f4;
-            color: #333;
-            line-height: 1.6;
-        }
-        h1 {
-            color: #0056b3;
-            margin: 20px;
-            text-align: center;
-            font-size: 2.5em;
-            border-bottom: 2px solid #0056b3;
-            padding-bottom: 10px;
-        }
-        h2, h3, h4 {
-            color: #0056b3;
-            margin-top: 25px;
-            margin-bottom: 15px;
-            font-weight: 600;
-        }
-        .category-container, .subcategory-container, .contrast-group {
-            margin: 0 20px 30px 20px;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 10px;
-            background-color: #fff;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-        }
-        .subcategory-container {
-            margin-top: 20px;
-            background-color: #f9f9f9;
-            border-color: #eee;
-            box-shadow: none;
-        }
-        .contrast-group {
-            margin-top: 15px;
-            padding: 15px;
-            border: 1px dashed #ccc;
-            background-color: #fafafa;
-            border-radius: 8px;
-            display: flex; /* Changed to flex */
-            flex-direction: column; /* Stack children vertically */
-            align-items: flex-start; /* Align children to the start (left) */
-            gap: 15px; /* Space between H4 and first pair-section, and between pair-sections */
-        }
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: #f4f4f4; /* Light background for overall page */
+        color: #333;
+        line-height: 1.6;
+        margin: 0;
+        padding: 20px; /* Add some padding around the content */
+        box-sizing: border-box;
+      }
+      h1 {
+        color: #0056b3;
+        margin: 20px auto; /* Center heading */
+        text-align: center;
+        font-size: 2.5em;
+        border-bottom: 2px solid #0056b3;
+        padding-bottom: 10px;
+        max-width: 800px; /* Limit width of main heading */
+      }
+      h2, h3, h4 {
+        color: #0056b3;
+        margin-top: 25px;
+        margin-bottom: 15px;
+        font-weight: 600;
+      }
+      form {
+        max-width: 480px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #fff;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        margin-bottom: 30px; /* Space below the main speech form */
+      }
+      button, select {
+        background-color: #fff;
+        border: none;
+        border-radius: 8px; /* Slightly more rounded */
+        height: 2.5rem; /* Increased height for better touch target */
+        padding: 0 15px; /* Added padding */
+        font-size: 1em; /* Standard font size */
+        cursor: pointer;
+        transition: background-color 0.2s ease, transform 0.1s ease;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      }
+      select {
+       -webkit-appearance: none;
+       -moz-appearance: none;
+       appearance: none;
+       padding-right: 30px; /* Space for custom arrow if needed */
+     }
 
-        /* New style for the wrapper around each pair's label and buttons */
-        .pair-section {
-            display: flex;
-            flex-direction: column; /* Stack label and buttons vertically */
-            gap: 8px; /* Space between label and buttons */
-            margin-bottom: 5px; /* Add a little space between different pair sections */
-            padding-bottom: 5px; /* Add padding at the bottom of each pair section */
-            border-bottom: 1px dotted #eee; /* Subtle separator between pairs */
-            width: 100%; /* Ensure it takes full width to enforce stacking */
-        }
+     /* Some firefox range styling */
+     input[type=range] {
+      -moz-appearance: none;
+     }
+     input[type=range]::-moz-range-thumb {
+      background-color: #007bff; /* Changed to match button blue */
+      height: 1rem;
+      width: .5rem;
+      border-color: #007bff;
+      box-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+     }
+     input[type=range]::-moz-range-track {
+      background-color: #ddd; /* Lighter track */
+     }
 
-        /* Remove border-bottom for the last pair-section in a group */
-        .contrast-group .pair-section:last-child {
-            border-bottom: none;
-            margin-bottom: 0;
-            padding-bottom: 0;
-        }
+      .speecharg {
+        height: 2.5rem; /* Match button height */
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px; /* Space between controls */
+      }
+      .speecharg label {
+        display: inline-block;
+        width: 25%; /* Adjusted width */
+        font-weight: 500;
+      }
+      .speecharg input[type="range"], .speecharg select {
+        display: inline-block;
+        width: calc(75% - 3rem); /* Adjusted width */
+        margin: 0;
+      }
+      .speecharg button {
+        width: 2.5rem; /* Square reset buttons */
+        height: 2.5rem;
+        margin: 0 0 0 1rem; /* Reduced margin */
+        padding: 0;
+        background-color: #6c757d; /* Grey for reset */
+        color: white;
+      }
+      .speecharg button:hover {
+        background-color: #5a6268;
+      }
 
-        .pair-label {
-            font-weight: bold;
-            font-size: 1.1em;
-            color: #555;
-        }
+      .bottom {
+        margin-top: 20px; /* More space above action buttons */
+        display: flex;
+        justify-content: space-between;
+        gap: 15px; /* Space between button groups */
+      }
+      .bottom > div {
+        flex: 1; /* Allow widebutton to take available space */
+      }
+      .bottom button.small {
+        height: 3.5rem; /* Larger touch target */
+        width: 3.5rem;
+        padding: 0;
+        border-radius: 50%; /* Circular buttons */
+        background-color: #007bff; /* Blue for play/pause */
+        color: white;
+      }
+      .bottom button.small:hover {
+        background-color: #0056b3;
+      }
+      .bottom button.small img {
+        width: 60%; /* Make icons smaller */
+        height: auto;
+        display: block;
+        margin: auto;
+      }
 
-        .button-pair {
-            display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px; /* Space between buttons in a pair */
-        }
-        button {
-            padding: 12px 20px;
-            font-size: 1.1em;
-            cursor: pointer;
-            background-color: #28a745; /* Green for general actions */
-            color: white;
-            border: none;
-            border-radius: 8px;
-            transition: background-color 0.2s ease, transform 0.1s ease;
-            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
-        }
-        button:hover {
-            background-color: #218838;
-            transform: translateY(-1px);
-        }
-        button:active {
-            transform: translateY(0);
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-        }
-        button.listen-pair {
-            background-color: #007bff; /* Blue for listen pair */
-        }
-        button.listen-pair:hover {
-            background-color: #0056b3;
-        }
-        button.test-pair {
-            background-color: #ffc107; /* Yellow/Orange for test */
-            color: #333;
-        }
-        button.test-pair:hover {
-            background-color: #e0a800;
-        }
-        select, input[type="text"], input[type="range"] {
-            padding: 10px;
-            font-size: 1em;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-            margin-right: 10px;
-            min-width: 120px;
-            box-sizing: border-box;
-        }
-        input[type="range"] {
-            -webkit-appearance: none;
-            width: 180px;
-            height: 8px;
-            background: #ddd;
-            outline: none;
-            opacity: 0.7;
-            transition: opacity .2s;
-            border-radius: 5px;
-        }
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: #007bff;
-            cursor: pointer;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-        input[type="range"]::-moz-range-thumb {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: #007bff;
-            cursor: pointer;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-        #pauseValue {
-            min-width: 70px;
-            text-align: center;
-            font-weight: bold;
-            color: #0056b3;
-        }
-        .controls {
-            position: sticky;
-            top: 0;
-            width: 100%;
-            background-color: #f4f4f4;
-            padding: 15px 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            z-index: 1000;
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 15px;
-            box-sizing: border-box;
-            border-bottom: 1px solid #ddd;
-        }
-        .controls label {
-            white-space: nowrap;
-            font-weight: 500;
-            color: #555;
-        }
-        .controls .control-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-        /* Removed file-input-section as it's no longer needed */
-        #loadingStatus {
-            font-weight: bold;
-            color: #dc3545;
-            margin-top: 10px;
-        }
-        #mainContentWrapper {
-            margin-top: 0; /* Will be set by JS */
-        }
+      .widebutton {
+        width: auto; /* Let flexbox handle width */
+        display: flex;
+        flex-direction: column;
+        gap: 10px; /* Space between stacked buttons */
+      }
+      .widebutton > button {
+        display: block;
+        width: 100%;
+        background-color: #28a745; /* Green for Speak It */
+        color: white;
+      }
+      .widebutton > button#preachit {
+        background-color: #dc3545; /* Red for Interrupt */
+      }
+      .widebutton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+      }
 
-        /* Custom Modal Styles */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 2000;
-        }
+      #textarea {
+         width: 100%;
+         height: 8rem;
+         display: block;
+         margin-bottom: 1rem;
+         border-radius: 5px;
+         position: relative;
+         background-color: #fff;
+         transition: background-color 100ms ease;
+         -webkit-transition: background-color 100ms ease;
+         box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+       }
 
-        .modal-content {
-            background-color: #fff;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
-            text-align: center;
-            max-width: 90%;
-            width: 450px;
-            animation: fadeIn 0.3s ease-out;
-        }
+       .speaking #textarea {
+        background-color: #e6ffe6; /* Light green when speaking */
+       }
 
-        .modal-content p {
-            font-size: 1.4em;
-            margin-bottom: 25px;
-            color: #333;
-            font-weight: 600;
-        }
+      #textarea > * {
+        position: absolute;
+        display: block;
+        border: none;
+        resize: none;
+        top: 0;
+        left: 0;
+        width: calc(100% - 1rem);
+        height: calc(100% - 1rem);
+        margin: .5rem;
+        padding: 0;
+        white-space: pre-wrap;
+        line-height: 1.1rem;
+        background-color: transparent;
+        font-size: 14px; /* Slightly larger font */
+        font-family: 'Inter', sans-serif; /* Use Inter font */
+        color: #333;
+      }
 
-        .modal-buttons {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
+      #textbeingspoken {
+        color: #555; /* Darker grey for spoken text */
+        visibility: hidden;
+        opacity: 0;
+        overflow: auto;
+        transition: all 100ms ease;
+        -webkit-transition: all 100ms ease;
+       }
 
-        .modal-buttons button {
-            flex: 1;
-            max-width: 180px;
-            padding: 15px 25px;
-            font-size: 1.2em;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background-color 0.2s ease, transform 0.1s ease;
-            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
-        }
+       .speaking #textbeingspoken {
+        visibility: visible;
+        opacity: 1;
+       }
 
-        .modal-buttons button:hover {
-            background-color: #0056b3;
-            transform: translateY(-1px);
-        }
+      a#gh {
+        color: #333;
+        text-align: right;
+        display: block;
+        font-style: italic;
+        margin-top: 20px;
+      }
 
-        .feedback-message {
-            margin-top: 20px;
-            font-weight: bold;
-            font-size: 1.5em;
-            animation: slideIn 0.5s ease-out;
-        }
+      #marker {
+        position: absolute;
+        visibility: hidden;
+        border: 2px solid #ffc107; /* Orange marker */
+        border-radius: 3px;
+        background-color: rgba(255, 193, 7, 0.2); /* Light orange background */
+      }
 
-        .feedback-message.correct {
-            color: #28a745;
-        }
+      #marker.moved {
+        visibility: visible;
+      }
+      #marker.animate {
+        transition: all 50ms ease;
+        -webkit-transition: all 50ms ease;
+      }
 
-        .feedback-message.wrong {
-            color: #dc3545;
-        }
+      /* Minimal Pair Specific Styles */
+      .category-container, .subcategory-container, .contrast-group {
+          margin: 0 auto 30px auto; /* Center and add margin */
+          padding: 20px;
+          border: 1px solid #ddd;
+          border-radius: 10px;
+          background-color: #fff;
+          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+          max-width: 800px; /* Max width for categories */
+      }
+      .subcategory-container {
+          margin-top: 20px;
+          background-color: #f9f9f9;
+          border-color: #eee;
+          box-shadow: none;
+      }
+      .contrast-group {
+          margin-top: 15px;
+          padding: 15px;
+          border: 1px dashed #ccc;
+          background-color: #fafafa;
+          border-radius: 8px;
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 15px;
+      }
+      .pair-section {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          margin-bottom: 5px;
+          padding-bottom: 5px;
+          border-bottom: 1px dotted #eee;
+          width: 100%;
+      }
+      .contrast-group .pair-section:last-child {
+          border-bottom: none;
+          margin-bottom: 0;
+          padding-bottom: 0;
+      }
+      .pair-label {
+          font-weight: bold;
+          font-size: 1.1em;
+          color: #555;
+      }
+      .button-pair {
+          display: flex;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 10px;
+      }
+      .button-pair button {
+          padding: 10px 15px; /* Slightly smaller padding for these buttons */
+          font-size: 0.95em;
+          border-radius: 6px;
+          height: auto; /* Auto height for text content */
+      }
+      button.listen-pair {
+          background-color: #007bff;
+      }
+      button.listen-pair:hover {
+          background-color: #0056b3;
+      }
+      button.test-pair {
+          background-color: #ffc107;
+          color: #333;
+      }
+      button.test-pair:hover {
+          background-color: #e0a800;
+      }
+      #pauseValue {
+          min-width: 70px;
+          text-align: center;
+          font-weight: bold;
+          color: #0056b3;
+      }
+      .controls {
+          position: sticky;
+          top: 0;
+          width: 100%;
+          background-color: #f4f4f4;
+          padding: 15px 20px;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+          z-index: 1000;
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          gap: 15px;
+          box-sizing: border-box;
+          border-bottom: 1px solid #ddd;
+      }
+      .controls label {
+          white-space: nowrap;
+          font-weight: 500;
+          color: #555;
+      }
+      .controls .control-group {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex-wrap: wrap;
+      }
+      #loadingStatus {
+          font-weight: bold;
+          color: #dc3545;
+          margin-top: 10px;
+      }
+      #mainContentWrapper {
+          margin-top: 0; /* Will be set by JS */
+      }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+      /* Custom Modal Styles */
+      .modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background-color: rgba(0, 0, 0, 0.7);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 2000;
+      }
 
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        /* Responsive adjustments */
-        @media (max-width: 768px) {
-            h1 {
-                font-size: 2em;
-                margin: 15px;
-            }
-            .category-container, .subcategory-container, .contrast-group {
-                margin: 0 10px 20px 10px;
-                padding: 15px;
-            }
-            .controls {
-                padding: 10px;
-                gap: 10px;
-            }
-            .controls .control-group {
-                flex-direction: column;
-                align-items: flex-start;
-                width: 100%;
-            }
-            .controls select, .controls input[type="text"], .controls input[type="range"] {
-                width: 100%;
-                margin-right: 0;
-            }
-            .button-pair {
-                flex-direction: column;
-                width: 100%;
-            }
-            .button-pair button {
-                width: 100%;
-                margin: 5px 0;
-            }
-            .modal-content {
-                padding: 20px;
-            }
-            .modal-buttons {
-                flex-direction: column;
-                gap: 10px;
-            }
-            .modal-buttons button {
-                max-width: 100%;
-            }
-        }
+      .modal-content {
+          background-color: #fff;
+          padding: 30px;
+          border-radius: 10px;
+          box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
+          text-align: center;
+          max-width: 90%;
+          width: 450px;
+          animation: fadeIn 0.3s ease-out;
+      }
+
+      .modal-content p {
+          font-size: 1.4em;
+          margin-bottom: 25px;
+          color: #333;
+          font-weight: 600;
+      }
+
+      .modal-buttons {
+          display: flex;
+          justify-content: center;
+          gap: 20px;
+          margin-bottom: 20px;
+      }
+
+      .modal-buttons button {
+          flex: 1;
+          max-width: 180px;
+          padding: 15px 25px;
+          font-size: 1.2em;
+          background-color: #007bff;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+          transition: background-color 0.2s ease, transform 0.1s ease;
+          box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+      }
+
+      .modal-buttons button:hover {
+          background-color: #0056b3;
+          transform: translateY(-1px);
+      }
+
+      .feedback-message {
+          margin-top: 20px;
+          font-weight: bold;
+          font-size: 1.5em;
+          animation: slideIn 0.5s ease-out;
+      }
+
+      .feedback-message.correct {
+          color: #28a745;
+      }
+
+      .feedback-message.wrong {
+          color: #dc3545;
+      }
+
+      @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(-20px); }
+          to { opacity: 1; transform: translateY(0); }
+      }
+
+      @keyframes slideIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+      }
+      /* Responsive adjustments */
+      @media (max-width: 768px) {
+          h1 {
+              font-size: 2em;
+              margin: 15px;
+          }
+          .category-container, .subcategory-container, .contrast-group {
+              margin: 0 10px 20px 10px;
+              padding: 15px;
+          }
+          .controls {
+              padding: 10px;
+              gap: 10px;
+          }
+          .controls .control-group {
+              flex-direction: column;
+              align-items: flex-start;
+              width: 100%;
+          }
+          .controls select, .controls input[type="text"], .controls input[type="range"] {
+              width: 100%;
+              margin-right: 0;
+          }
+          .button-pair {
+              flex-direction: column;
+              width: 100%;
+          }
+          .button-pair button {
+              width: 100%;
+              margin: 5px 0;
+          }
+          .modal-content {
+              padding: 20px;
+          }
+          .modal-buttons {
+              flex-direction: column;
+              gap: 10px;
+          }
+          .modal-buttons button {
+              max-width: 100%;
+          }
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body class="loading">
+    <h1>Web Speech Synthesis Demo</h1>
+    <form>
+      <div id="textarea">
+        <textarea id="texttospeak">Call me Ishmael. Some years ago&#8212;never mind how long precisely&#8212;having little or no money in my purse, and nothing particular to interest me on shore, I thought I would sail about a little and see the watery part of the world.</textarea>
+        <div id="textbeingspoken"></div>
+      </div>
+      <div class="speecharg">
+        <label for="pitch">Pitch</label><input id="pitch" type="range" value="0.5" min="0" max="1" step="0.05"><button type="button" aria-label="Reset pitch" title="Reset pitch" onclick="resetPitch();">&#x21b6;</button>
+      </div>
+      <div class="speecharg">
+        <label for="rate">Rate</label><input id="rate" type="range" value="0" min="-3" max="3" step="0.25"><button type="button" aria-label="Reset rate" title="Reset rate" onclick="resetRate();">&#x21b6;</button>
+      </div>
+      <div class="speecharg">
+        <label for="volue">Volume</label><input id="volume" type="range" value="1" min="0" max="1" step="0.05"><button type="button" aria-label="Reset volume" title="Reset volume" onclick="resetVolume();">&#x21b6;</button>
+      </div>
+      <div class="speecharg">
+        <label for="voice">Voice</label><select id="voice"></select><button type="button" aria-label="Reset voice" title="Reset voice" onclick="resetVoice();">&#x21b6;</button>
+      </div>
+      <div class="bottom">
+        <div class="widebutton">
+          <button type="button" onmousedown="speak();"><strong>Speak it</strong></button>
+          <button type="button" id="preachit" onmousedown="stop(); speak();">Interrupt</button>
+        </div>
+        <button type="button" class="small" aria-label="Pause/Resume" title="Pause/Resume" onmousedown="playpause();"><img src="https://placehold.co/40x40/007bff/ffffff?text=Play/Pause" alt="Play/Pause"></button>
+        <button type="button" class="small" aria-label="Cancel" title="Cancel" onmousedown="stop();"><img src="https://placehold.co/40x40/dc3545/ffffff?text=Stop" alt="Stop"></button>
+      </div>
+      <div class="bottom">
+      </div>
+    </form>
+    <div id="marker"></div>
 
+    <!-- Minimal Pairs Section -->
     <div class="controls" id="stickyControls">
         <div class="control-group">
             <label for="voiceSelect">Select Voice:</label>
@@ -351,8 +521,6 @@
     </div>
 
     <div id="mainContentWrapper">
-        <h1>Word Recognition Training</h1>
-
         <div id="wordButtonsContainer">
             <!-- Word categories and buttons will be dynamically loaded here -->
         </div>
@@ -370,8 +538,188 @@
         </div>
     </div>
 
-    <script>
-        // Embedded JSON Data
+    <script type="text/javascript">
+        var texttospeak = document.getElementById('texttospeak');
+        var textbeingspoken = document.getElementById('textbeingspoken');
+        var marker = document.getElementById('marker');
+        var range = document.createRange();
+        var speechtext;
+        var firstBoundary;
+
+        var voices = [];
+        // Renamed for clarity to avoid conflict with minimal pair's voiceSelect
+        var mainVoiceSelect = document.querySelector('#voice'); 
+
+        function populateVoiceList() {
+          voices = window.speechSynthesis.getVoices();
+          mainVoiceSelect.innerHTML = ''; // Clear main voice select
+          var minimalPairVoiceSelect = document.getElementById('voiceSelect'); // Get minimal pair voice select
+          minimalPairVoiceSelect.innerHTML = ''; // Clear minimal pair voice select
+
+          // Sort voices for consistent order
+          voices.sort((a, b) => {
+              const aname = a.name.toUpperCase();
+              const bname = b.name.toUpperCase();
+              if (aname < bname) return -1;
+              if (aname > bname) return +1;
+              return 0;
+          });
+
+          if (voices.length === 0) {
+              console.warn("No voices available. This might be due to browser limitations or voices not being loaded yet.");
+              mainVoiceSelect.innerHTML = '<option value="">No Voices Available</option>';
+              minimalPairVoiceSelect.innerHTML = '<option value="">No Voices Available</option>';
+              return;
+          }
+
+          let defaultVoiceFound = false;
+
+          for (var i = 0; i < voices.length; i++) {
+            var optionMain = document.createElement('option');
+            optionMain.innerHTML = voices[i].name + ' (' + voices[i].lang + ')';
+            optionMain.setAttribute('value', voices[i].voiceURI);
+            optionMain.voice = voices[i]; // Store voice object directly
+
+            var optionMinimal = document.createElement('option');
+            optionMinimal.textContent = `${voices[i].name} (${voices[i].lang})`;
+            optionMinimal.setAttribute('data-index', i); // Store index for minimal pair logic
+
+            if (voices[i].default || (voices[i].lang === 'en-US' && !defaultVoiceFound)) {
+              optionMain.selected = true;
+              optionMinimal.selected = true;
+              defaultVoiceFound = true;
+            }
+            mainVoiceSelect.appendChild(optionMain);
+            minimalPairVoiceSelect.appendChild(optionMinimal);
+          }
+
+          // Fallback if no default or en-US voice was found
+          if (!defaultVoiceFound && voices.length > 0) {
+              mainVoiceSelect.options[0].selected = true;
+              minimalPairVoiceSelect.options[0].selected = true;
+          }
+          console.log("Voice list populated. Total voices:", voices.length);
+        }
+
+        populateVoiceList();
+        if (speechSynthesis.onvoiceschanged !== undefined)
+          speechSynthesis.onvoiceschanged = populateVoiceList;
+
+        // Ensure voice selection in minimal pair section updates main voice selection
+        document.getElementById('voiceSelect').addEventListener('change', function() {
+            const selectedIndex = this.selectedIndex;
+            mainVoiceSelect.selectedIndex = selectedIndex;
+        });
+
+        // Ensure main voice selection updates minimal pair section
+        mainVoiceSelect.addEventListener('change', function() {
+            const selectedIndex = this.selectedIndex;
+            document.getElementById('voiceSelect').selectedIndex = selectedIndex;
+        });
+
+        function stop() {
+          speechSynthesis.cancel();
+        }
+
+        function playpause() {
+          if (speechSynthesis.paused)
+            speechSynthesis.resume();
+          else
+            speechSynthesis.pause();
+        }
+
+        function speak() {
+          speechtext = texttospeak.value;
+          firstBoundary = true;
+          textbeingspoken.textContent = speechtext;
+
+          utterance = new SpeechSynthesisUtterance(
+            document.getElementById('texttospeak').value);
+          // Use the voice selected in the main dropdown
+          utterance.voice = voices[mainVoiceSelect.selectedIndex]; 
+          utterance.volume = document.getElementById('volume').value;
+          utterance.pitch = document.getElementById('pitch').value;
+          var rate = document.getElementById('rate').value;
+          utterance.rate = Math.pow(Math.abs(rate) + 1, rate < 0 ? -1 : 1);
+          utterance.addEventListener('start', function () {
+            marker.classList.remove('animate');
+            document.body.classList.add('speaking');
+          });
+          utterance.addEventListener('start', handleSpeechEvent);
+          utterance.addEventListener('end', handleSpeechEvent);
+          utterance.addEventListener('error', handleSpeechEvent);
+          utterance.addEventListener('boundary', handleSpeechEvent);
+          utterance.addEventListener('pause', handleSpeechEvent);
+          utterance.addEventListener('resume', handleSpeechEvent);
+
+          if (utterance.voice) { // Only speak if a valid voice is selected
+              speechSynthesis.speak(utterance);
+          } else {
+              console.warn("No valid voice selected for main text-to-speech.");
+              document.body.classList.remove('speaking');
+              marker.classList.remove('moved');
+          }
+        }
+
+        function handleSpeechEvent(e) {
+          console.log('Speech Event:', e);
+
+          switch (e.type) {
+            case 'start':
+              marker.classList.remove('animate');
+              document.body.classList.add('speaking');
+              break;
+            case 'end':
+            case 'endEvent':
+            case 'error':
+              document.body.classList.remove('speaking');
+              marker.classList.remove('moved');
+              break;
+            case 'boundary':
+            {
+              if (e.name != 'word')
+                break;
+              var substr = speechtext.slice(e.charIndex);
+              var rex = /\S+/g;
+              var res = rex.exec(substr);
+              if (!res) return;
+              var startOffset = res.index + e.charIndex;
+              var endOffset = rex.lastIndex + e.charIndex;
+              range.setStart(textbeingspoken.firstChild, startOffset);
+              range.setEnd(textbeingspoken.firstChild, endOffset);
+              var rect = range.getBoundingClientRect();
+              var delta = 0;
+              // do I need to scroll?
+              var parentRect = textbeingspoken.getBoundingClientRect();
+              if (rect.bottom > parentRect.bottom) {
+                delta = rect.bottom - parentRect.bottom;
+              }
+              if (rect.top < parentRect.top) {
+                delta = rect.top - parentRect.top;
+              }
+
+              textbeingspoken.scrollTop += delta;
+              texttospeak.scrollTop = textbeingspoken.scrollTop;
+
+              marker.style.top = rect.top - delta - 1;
+              marker.style.left = rect.left - 1;
+              marker.style.width = rect.width + 1;
+              marker.style.height = rect.height + 1;
+              marker.classList.add('moved');
+              if (firstBoundary) {
+                firstBoundary = false;
+                marker.classList.add('animate');
+              }
+              break;
+            }
+            default:
+              break;
+          }
+        }
+
+        // --- Minimal Pairs Specific Logic (Integrated) ---
+
+        // Embedded JSON Data for Minimal Pairs
         const embeddedWordData = [
             {
                 "category": "Initial Consonant",
@@ -382,74 +730,43 @@
                             {
                                 "description": "/p/ vs. /t/",
                                 "pairs": [
-                                    ["Pan", "Tan"],
-                                    ["Pin", "Tin"],
-                                    ["Pot", "Tot"],
-                                    ["Pick", "Tick"],
-                                    ["Pale", "Tale"],
-                                    ["Pat", "Tat"],
-                                    ["Pill", "Till"],
-                                    ["Pug", "Tug"],
-                                    ["Pest", "Test"],
-                                    ["Pore", "Tore"],
-                                    ["Pea", "Tea"],
-                                    ["Pace", "Taste"],
-                                    ["Pipe", "Type"],
-                                    ["Pool", "Tool"],
-                                    ["Pail", "Tail"]
+                                    ["Pan", "Tan"], ["Pin", "Tin"], ["Pot", "Tot"], ["Pick", "Tick"], ["Pale", "Tale"], ["Pat", "Tat"], ["Pill", "Till"], ["Pug", "Tug"], ["Pest", "Test"], ["Pore", "Tore"], ["Pea", "Tea"], ["Pace", "Taste"], ["Pipe", "Type"], ["Pool", "Tool"], ["Pail", "Tail"]
                                 ]
                             },
                             {
                                 "description": "/b/ vs. /d/",
                                 "pairs": [
-                                    ["Bat", "Dat"],
-                                    ["Big", "Dig"],
-                                    ["Bell", "Dell"],
-                                    ["Buy", "Dye"],
-                                    ["Back", "Dack"]
+                                    ["Bat", "Dat"], ["Big", "Dig"], ["Bell", "Dell"], ["Buy", "Dye"], ["Back", "Dack"]
                                 ]
                             },
                             {
                                 "description": "/p/ vs. /k/",
                                 "pairs": [
-                                    ["Pat", "Cat"],
-                                    ["Pool", "Cool"],
-                                    ["Pear", "Care"],
-                                    ["Page", "Cage"]
+                                    ["Pat", "Cat"], ["Pool", "Cool"], ["Pear", "Care"], ["Page", "Cage"]
                                 ]
                             },
                             {
                                 "description": "/m/ vs. /n/",
                                 "pairs": [
-                                    ["Mat", "Nat"],
-                                    ["Me", "Knee"],
-                                    ["Might", "Night"],
-                                    ["Met", "Net"]
+                                    ["Mat", "Nat"], ["Me", "Knee"], ["Might", "Night"], ["Met", "Net"]
                                 ]
                             },
                             {
                                 "description": "/f/ vs. /s/",
                                 "pairs": [
-                                    ["Fin", "Sin"],
-                                    ["Fan", "San"],
-                                    ["Fast", "Sass"],
-                                    ["Fox", "Socks"]
+                                    ["Fin", "Sin"], ["Fan", "San"], ["Fast", "Sass"], ["Fox", "Socks"]
                                 ]
                             },
                             {
                                 "description": "/z/ vs. /dʒ/",
                                 "pairs": [
-                                    ["zest", "jest"],
-                                    ["zeal", "jail"]
+                                    ["zest", "jest"], ["zeal", "jail"]
                                 ]
                             },                           
-                                                        {
+                            {
                                 "description": "/ʃ/ vs. /s/",
                                 "pairs": [
-                                    ["Sheep", "Seep"],
-                                    ["Shun", "Sun"],
-                                    ["Shame", "Same"],
-                                    ["Shin", "Sin"]
+                                    ["Sheep", "Seep"], ["Shun", "Sun"], ["Shame", "Same"], ["Shin", "Sin"]
                                 ]
                             }
                         ]
@@ -460,53 +777,37 @@
                             {
                                 "description": "/p/ vs. /b/",
                                 "pairs": [
-                                    ["Pat", "Bat"],
-                                    ["Pig", "Big"],
-                                    ["Pin", "Bin"],
-                                    ["Pie", "Buy"],
-                                    ["Pit", "Bit"]
+                                    ["Pat", "Bat"], ["Pig", "Big"], ["Pin", "Bin"], ["Pie", "Buy"], ["Pit", "Bit"]
                                 ]
                             },
                             {
                                 "description": "/t/ vs. /d/",
                                 "pairs": [
-                                    ["To", "Do"],
-                                    ["Tip", "Dip"],
-                                    ["Ten", "Den"],
-                                    ["Tie", "Die"]
+                                    ["To", "Do"], ["Tip", "Dip"], ["Ten", "Den"], ["Tie", "Die"]
                                 ]
                             },
                             {
                                 "description": "/k/ vs. /g/",
                                 "pairs": [
-                                    ["Cat", "Gat"],
-                                    ["Cut", "Gut"],
-                                    ["Kiss", "Guess"],
-                                    ["Came", "Game"]
+                                    ["Cat", "Gat"], ["Cut", "Gut"], ["Kiss", "Guess"], ["Came", "Game"]
                                 ]
                             },
                             {
                                 "description": "/f/ vs. /v/",
                                 "pairs": [
-                                    ["Fan", "Van"],
-                                    ["Fine", "Vine"],
-                                    ["Fat", "Vat"],
-                                    ["Few", "View"]
+                                    ["Fan", "Van"], ["Fine", "Vine"], ["Fat", "Vat"], ["Few", "View"]
                                 ]
                             },
                             {
                                 "description": "/s/ vs. /z/",
                                 "pairs": [
-                                    ["Seal", "Zeal"],
-                                    ["Sink", "Zink"],
-                                    ["Sip", "Zip"]
+                                    ["Seal", "Zeal"], ["Sink", "Zink"], ["Sip", "Zip"]
                                 ]
                             },
                             {
                                 "description": "/θ/ vs. /ð/",
                                 "pairs": [
-                                    ["Thin", "Then"],
-                                    ["Thigh", "Thy"]
+                                    ["Thin", "Then"], ["Thigh", "Thy"]
                                 ]
                             }
                         ]
@@ -517,32 +818,25 @@
                             {
                                 "description": "/p/ (Stop) vs. /f/ (Fricative)",
                                 "pairs": [
-                                    ["Pan", "Fan"],
-                                    ["Pat", "Fat"],
-                                    ["Pill", "Fill"]
+                                    ["Pan", "Fan"], ["Pat", "Fat"], ["Pill", "Fill"]
                                 ]
                             },
                             {
                                 "description": "/d/ (Stop) vs. /n/ (Nasal)",
                                 "pairs": [
-                                    ["Den", "Nen"],
-                                    ["Dare", "Nair"]
+                                    ["Den", "Nen"], ["Dare", "Nair"]
                                 ]
                             },
                             {
                                 "description": "/tʃ/ (Affricate) vs. /ʃ/ (Fricative)",
                                 "pairs": [
-                                    ["Cheer", "Shear"],
-                                    ["Chip", "Ship"],
-                                    ["Chop", "Shop"]
+                                    ["Cheer", "Shear"], ["Chip", "Ship"], ["Chop", "Shop"]
                                 ]
                             },
                             {
                                 "description": "/dʒ/ (Affricate) vs. /z/ (Fricative)",
                                 "pairs": [
-                                    ["jag", "zag"],
-                                    ["jeep", "zeep"],
-                                    ["jest", "zest"]
+                                    ["jag", "zag"], ["jeep", "zeep"], ["jest", "zest"]
                                 ]
                             }
                         ]
@@ -558,35 +852,25 @@
                             {
                                 "description": "/t/ vs. /d/ (Alveolar Stop)",
                                 "pairs": [
-                                    ["Beat", "Bead"],
-                                    ["Hat", "Had"],
-                                    ["Sit", "Sid"],
-                                    ["Pat", "Pad"],
-                                    ["Bet", "Bed"]
+                                    ["Beat", "Bead"], ["Hat", "Had"], ["Sit", "Sid"], ["Pat", "Pad"], ["Bet", "Bed"]
                                 ]
                             },
                             {
                                 "description": "/p/ vs. /b/ (Bilabial Stop)",
                                 "pairs": [
-                                    ["Cap", "Cab"],
-                                    ["Rip", "Rib"],
-                                    ["Tap", "Tab"]
+                                    ["Cap", "Cab"], ["Rip", "Rib"], ["Tap", "Tab"]
                                 ]
                             },
                             {
                                 "description": "/k/ vs. /g/ (Velar Stop)",
                                 "pairs": [
-                                    ["Back", "Bag"],
-                                    ["Lock", "Log"],
-                                    ["Pick", "Pig"]
+                                    ["Back", "Bag"], ["Lock", "Log"], ["Pick", "Pig"]
                                 ]
                             },
                             {
                                 "description": "/s/ vs. /z/ (Alveolar Fricative)",
                                 "pairs": [
-                                    ["Peace", "Peas"],
-                                    ["Race", "Raise"],
-                                    ["Bus", "Buzz"]
+                                    ["Peace", "Peas"], ["Race", "Raise"], ["Bus", "Buzz"]
                                 ]
                             }
                         ]
@@ -597,16 +881,13 @@
                             {
                                 "description": "/m/ vs. /n/ (Nasal)",
                                 "pairs": [
-                                    ["Swim", "Swin"],
-                                    ["Team", "Teen"]
+                                    ["Swim", "Swin"], ["Team", "Teen"]
                                 ]
                             },
                             {
                                 "description": "/n/ vs. /ŋ/ (Alveolar vs. Velar Nasal)",
                                 "pairs": [
-                                    ["Sin", "Sing"],
-                                    ["Ran", "Rang"],
-                                    ["Win", "Wing"]
+                                    ["Sin", "Sing"], ["Ran", "Rang"], ["Win", "Wing"]
                                 ]
                             }
                         ]
@@ -617,15 +898,13 @@
                             {
                                 "description": "/t/ (Stop) vs. /s/ (Fricative)",
                                 "pairs": [
-                                    ["Hat", "Hass"],
-                                    ["Pat", "Pass"]
+                                    ["Hat", "Hass"], ["Pat", "Pass"]
                                 ]
                             },
                             {
                                 "description": "/d/ (Stop) vs. /z/ (Fricative)",
                                 "pairs": [
-                                    ["Aid", "Aze"],
-                                    ["Bid", "Biz"]
+                                    ["Aid", "Aze"], ["Bid", "Biz"]
                                 ]
                             }
                         ]
@@ -641,42 +920,31 @@
                             {
                                 "description": "/ɪ/ (short i) vs. /iː/ (long e)",
                                 "pairs": [
-                                    ["Bin", "Bean"],
-                                    ["Fit", "Feet"],
-                                    ["Lip", "Leap"],
-                                    ["Sip", "Seep"],
-                                    ["Dill", "Deal"]
+                                    ["Bin", "Bean"], ["Fit", "Feet"], ["Lip", "Leap"], ["Sip", "Seep"], ["Dill", "Deal"]
                                 ]
                             },
                             {
                                 "description": "/æ/ (short a) vs. /ɑː/ (broad a)",
                                 "pairs": [
-                                    ["Cat", "Cart"],
-                                    ["Bad", "Bard"]
+                                    ["Cat", "Cart"], ["Bad", "Bard"]
                                 ]
                             },
                             {
                                 "description": "/ʊ/ (short u) vs. /uː/ (long oo)",
                                 "pairs": [
-                                    ["Look", "Luke"],
-                                    ["Pull", "Pool"],
-                                    ["Should", "Shooed"]
+                                    ["Look", "Luke"], ["Pull", "Pool"], ["Should", "Shooed"]
                                 ]
                             },
                             {
                                 "description": "/ɛ/ (short e) vs. /eɪ/ (long a)",
                                 "pairs": [
-                                    ["Met", "Mate"],
-                                    ["Wet", "Wait"],
-                                    ["Sell", "Sail"],
-                                    ["Bed", "Bade"]
+                                    ["Met", "Mate"], ["Wet", "Wait"], ["Sell", "Sail"], ["Bed", "Bade"]
                                 ]
                             },
                             {
                                 "description": "/ʌ/ (short u as in 'cut') vs. /ɔː/ (aw as in 'caught')",
                                 "pairs": [
-                                    ["Cut", "Caught"],
-                                    ["Duck", "Dock"]
+                                    ["Cut", "Caught"], ["Duck", "Dock"]
                                 ]
                             }
                         ]
@@ -687,15 +955,13 @@
                             {
                                 "description": "/iː/ (long e) vs. /uː/ (long oo)",
                                 "pairs": [
-                                    ["Feel", "Fool"],
-                                    ["Leave", "Looze"]
+                                    ["Feel", "Fool"], ["Leave", "Looze"]
                                 ]
                             },
                             {
                                 "description": "/æ/ (short a) vs. /ɑː/ (broad a)",
                                 "pairs": [
-                                    ["Cab", "Cob"],
-                                    ["Cat", "Cot"]
+                                    ["Cab", "Cob"], ["Cat", "Cot"]
                                 ]
                             }
                         ]
@@ -706,15 +972,13 @@
                             {
                                 "description": "/ɑː/ (broad a) vs. /aɪ/ (long i)",
                                 "pairs": [
-                                    ["Dad", "Died"],
-                                    ["Cop", "Cope"]
+                                    ["Dad", "Died"], ["Cop", "Cope"]
                                 ]
                             },
                             {
                                 "description": "/ɔː/ (aw) vs. /oʊ/ (long o)",
                                 "pairs": [
-                                    ["Cot", "Coat"],
-                                    ["Not", "Note"]
+                                    ["Cot", "Coat"], ["Not", "Note"]
                                 ]
                             }
                         ]
@@ -730,22 +994,19 @@
                             {
                                 "description": "/s/ vs. /st/",
                                 "pairs": [
-                                    ["Sit", "Stir"],
-                                    ["Sip", "Stripe"]
+                                    ["Sit", "Stir"], ["Sip", "Stripe"]
                                 ]
                             },
                             {
                                 "description": "/l/ vs. /sl/",
                                 "pairs": [
-                                    ["Led", "Sled"],
-                                    ["Light", "Slight"]
+                                    ["Led", "Sled"], ["Light", "Slight"]
                                 ]
                             },
                             {
                                 "description": "/p/ vs. /sp/",
                                 "pairs": [
-                                    ["Pin", "Spin"],
-                                    ["Peak", "Speak"]
+                                    ["Pin", "Spin"], ["Peak", "Speak"]
                                 ]
                             }
                         ]
@@ -756,15 +1017,13 @@
                             {
                                 "description": "/mp/ vs. /nt/",
                                 "pairs": [
-                                    ["Camp", "Cant"],
-                                    ["Dump", "Dunt"]
+                                    ["Camp", "Cant"], ["Dump", "Dunt"]
                                 ]
                             },
                             {
                                 "description": "/st/ vs. /sk/",
                                 "pairs": [
-                                    ["Last", "Lask"],
-                                    ["Test", "Tesk"]
+                                    ["Last", "Lask"], ["Test", "Tesk"]
                                 ]
                             }
                         ]
@@ -780,8 +1039,7 @@
                             {
                                 "description": "/t/ vs. /d/",
                                 "pairs": [
-                                    ["Meta", "Medal"],
-                                    ["City", "Cider"]
+                                    ["Meta", "Medal"], ["City", "Cider"]
                                 ]
                             }
                         ]
@@ -792,8 +1050,7 @@
                             {
                                 "description": "/n/ vs. /m/",
                                 "pairs": [
-                                    ["Winner", "Whimper"],
-                                    ["Denim", "Demin"]
+                                    ["Winner", "Whimper"], ["Denim", "Demin"]
                                 ]
                             }
                         ]
@@ -802,394 +1059,280 @@
             }
         ];
 
-        // --- Web Speech API Logic ---
-        if ('speechSynthesis' in window) {
-            const synth = window.speechSynthesis;
-            const wordButtonsContainer = document.getElementById('wordButtonsContainer');
-            const voiceSelect = document.getElementById('voiceSelect');
+        // Minimal Pair Specific Elements (re-declared to avoid conflict with main script's var names)
+        const wordButtonsContainer = document.getElementById('wordButtonsContainer');
+        const voiceSelect = document.getElementById('voiceSelect'); // This is the minimal pair voice select
 
-            const textBox1 = document.getElementById('textBox1');
-            const textBox2 = document.getElementById('textBox2');
-            const speakFirstWordButton = document.getElementById('speakFirstWordButton');
-            const speakSecondWordButton = document.getElementById('speakSecondWordButton');
-            const speakCustomPairButton = document.getElementById('speakCustomPairButton');
-            const testCustomPairButton = document.getElementById('testCustomPairButton'); // Custom test button
+        const textBox1 = document.getElementById('textBox1');
+        const textBox2 = document.getElementById('textBox2');
+        const speakFirstWordButton = document.getElementById('speakFirstWordButton');
+        const speakSecondWordButton = document.getElementById('speakSecondWordButton');
+        const speakCustomPairButton = document.getElementById('speakCustomPairButton');
+        const testCustomPairButton = document.getElementById('testCustomPairButton');
 
-            const pauseSlider = document.getElementById('pauseSlider');
-            const pauseValue = document.getElementById('pauseValue');
-            const stickyControls = document.getElementById('stickyControls');
-            const mainContentWrapper = document.getElementById('mainContentWrapper');
+        const pauseSlider = document.getElementById('pauseSlider');
+        const pauseValue = document.getElementById('pauseValue');
+        const stickyControls = document.getElementById('stickyControls');
+        const mainContentWrapper = document.getElementById('mainContentWrapper');
 
-            // Modal elements
-            const testModal = document.getElementById('testModal');
-            const modalQuestion = document.getElementById('modalQuestion');
-            const modalOption1 = document.getElementById('modalOption1');
-            const modalOption2 = document.getElementById('modalOption2');
-            const modalFeedback = document.getElementById('modalFeedback');
+        // Modal elements
+        const testModal = document.getElementById('testModal');
+        const modalQuestion = document.getElementById('modalQuestion');
+        const modalOption1 = document.getElementById('modalOption1');
+        const modalOption2 = document.getElementById('modalOption2');
+        const modalFeedback = document.getElementById('modalFeedback');
 
-            let availableVoices = [];
-            let currentPauseDurationMs = parseInt(pauseSlider.value);
-            let correctWord = ''; // Variable to store the correct word for the test
+        let currentPauseDurationMs = parseInt(pauseSlider.value);
+        let correctWord = ''; // Variable to store the correct word for the test
 
-            // Flag to manage speech state
-            let isSpeechInProgress = false;
+        // Flag to manage speech state for minimal pairs
+        let isSpeechInProgress = false;
 
-            // --- Voice Loading Retry Variables ---
-            let voiceLoadRetries = 0;
-            const MAX_VOICE_RETRIES = 10; // Try up to 10 times
-            const VOICE_RETRY_DELAY = 200; // Wait 200ms between retries
+        // Helper function to get the selected voice for minimal pairs
+        function getSelectedVoiceForMinimalPairs() {
+            const selectedIndex = voiceSelect.selectedIndex;
+            return voices[selectedIndex]; // Use the global 'voices' array
+        }
 
-            function populateVoiceList() {
-                availableVoices = synth.getVoices().sort((a, b) => {
-                    const aname = a.name.toUpperCase();
-                    const bname = b.name.toUpperCase();
-                    if (aname < bname) return -1;
-                    if (aname > bname) return +1;
-                    return 0;
-                });
-
-                // --- Retry logic for Firefox and other browsers where voices might not be immediately available ---
-                if (availableVoices.length === 0 && voiceLoadRetries < MAX_VOICE_RETRIES) {
-                    console.warn("No voices available yet, retrying...", voiceLoadRetries + 1);
-                    voiceLoadRetries++;
-                    setTimeout(populateVoiceList, VOICE_RETRY_DELAY); // Retry after a short delay
-                    return; // Exit this call, wait for retry
-                } else if (availableVoices.length === 0 && voiceLoadRetries >= MAX_VOICE_RETRIES) {
-                    console.error("Failed to load voices after multiple retries. Please try refreshing or ensure voices are installed.");
-                    voiceSelect.innerHTML = '<option value="">No Voices Available</option>'; // Show a message
-                    return; // Stop trying
-                }
-                // --- End Retry ---
-
-                voiceSelect.innerHTML = '';
-                let defaultVoiceFound = false;
-
-                availableVoices.forEach((voice, index) => {
-                    const option = document.createElement('option');
-                    option.textContent = `${voice.name} (${voice.lang})`;
-                    // Store the index of the voice in the availableVoices array
-                    option.setAttribute('data-index', index); 
-
-                    // Attempt to select a default voice (e.g., en-US)
-                    if (voice.lang === 'en-US' && !defaultVoiceFound) {
-                        option.selected = true;
-                        defaultVoiceFound = true;
-                    }
-
-                    voiceSelect.appendChild(option);
-                });
-
-                // If no en-US voice was found, try en-GB as a fallback
-                if (!defaultVoiceFound) {
-                    const enGBVoiceIndex = availableVoices.findIndex(voice => voice.lang === 'en-GB');
-                    if (enGBVoiceIndex !== -1) {
-                        // Select the option corresponding to the en-GB voice
-                        voiceSelect.querySelector(`option[data-index="${enGBVoiceIndex}"]`).selected = true;
-                        defaultVoiceFound = true; // Mark as found
-                    }
-                }
-                
-                // If still no default, just select the first available voice
-                if (!defaultVoiceFound && availableVoices.length > 0) {
-                    voiceSelect.options[0].selected = true;
-                }
-
-                console.log("Voice list populated. Total voices:", availableVoices.length);
-                voiceLoadRetries = 0; // Reset retry counter on success
+        // Helper function to wait for speech to stop (re-using main script's synth.cancel)
+        async function waitForSpeechToStopMinimalPairs() {
+            if (speechSynthesis.speaking) {
+                speechSynthesis.cancel();
             }
-
-            // Event listener for voices changed (standard approach)
-            if (synth.onvoiceschanged !== undefined) {
-                synth.onvoiceschanged = populateVoiceList;
+            while (speechSynthesis.speaking) {
+                await new Promise(resolve => setTimeout(resolve, 50));
             }
+            isSpeechInProgress = false;
+        }
 
-            // Initial call to populate. If voices aren't ready, the retry logic handles it.
-            populateVoiceList();
+        // Speak function for minimal pairs
+        async function speakWordMinimalPairs(word) {
+            return new Promise(async (resolve) => {
+                await waitForSpeechToStopMinimalPairs();
 
-            // Event listener for voice selection change
-            voiceSelect.addEventListener('change', () => {
-                // No need to update selectedVoice directly here, as getSelectedVoice will use the dropdown's current selection
-            });
+                isSpeechInProgress = true;
 
-            // Modified getSelectedVoice to use the direct index
-            function getSelectedVoice() {
-                const selectedOption = voiceSelect.selectedOptions[0];
-                const voiceIndex = parseInt(selectedOption.getAttribute('data-index'));
-                // Return the voice object directly from the availableVoices array using its stored index
-                return availableVoices[voiceIndex];
-            }
+                const utterance = new SpeechSynthesisUtterance(word);
+                utterance.voice = getSelectedVoiceForMinimalPairs();
+                utterance.pitch = 1;
+                utterance.rate = 1;
 
-            // New helper function to wait for speech to stop
-            async function waitForSpeechToStop() {
-                // If speech is already in progress, cancel it
-                if (synth.speaking) {
-                    synth.cancel();
-                }
-                // Poll until speech is no longer in progress
-                while (synth.speaking) {
-                    await new Promise(resolve => setTimeout(resolve, 50)); // Check every 50ms
-                }
-                isSpeechInProgress = false; // Ensure flag is reset after stopping
-            }
+                utterance.onend = () => {
+                    isSpeechInProgress = false;
+                    resolve();
+                };
+                utterance.onerror = (event) => {
+                    console.error('SpeechSynthesisUtterance.onerror (Minimal Pairs)', event.error, `Word: "${word}"`);
+                    isSpeechInProgress = false;
+                    resolve();
+                };
 
-            async function speakWord(word) {
-                return new Promise(async (resolve) => {
-                    await waitForSpeechToStop(); // Ensure previous speech is fully stopped
-
-                    isSpeechInProgress = true; // Set flag to indicate speech is in progress
-
-                    const utterance = new SpeechSynthesisUtterance(word);
-                    utterance.voice = getSelectedVoice(); // Now uses the more robust selection
-                    utterance.pitch = 1;
-                    utterance.rate = 1;
-
-                    utterance.onend = () => {
-                        isSpeechInProgress = false; // Reset flag when speech ends
+                try {
+                    if (utterance.voice) {
+                        speechSynthesis.speak(utterance);
+                    } else {
+                        console.warn("No valid voice selected for minimal pair speech, cannot speak.");
+                        isSpeechInProgress = false;
                         resolve();
-                    };
-                    utterance.onerror = (event) => {
-                        console.error('SpeechSynthesisUtterance.onerror', event.error, `Word: "${word}"`);
-                        isSpeechInProgress = false; // Reset flag on error
-                        resolve(); // Always resolve the promise to prevent blocking
-                    };
+                    }
+                } catch (e) {
+                    console.error("Error calling speechSynthesis.speak (Minimal Pairs):", e);
+                    isSpeechInProgress = false;
+                    resolve();
+                }
+            });
+        }
 
-                    try {
-                        // Only speak if a valid voice is selected
-                        if (utterance.voice) {
-                            synth.speak(utterance);
-                        } else {
-                            console.warn("No valid voice selected, cannot speak.");
-                            isSpeechInProgress = false;
-                            resolve();
-                        }
-                    } catch (e) {
-                        console.error("Error calling synth.speak:", e);
-                        isSpeechInProgress = false; // Reset flag on immediate error
-                        resolve(); // Always resolve the promise
+        async function speakPairMinimalPairs(word1, word2) {
+            await speakWordMinimalPairs(word1);
+            await new Promise(resolve => setTimeout(resolve, currentPauseDurationMs));
+            await speakWordMinimalPairs(word2);
+        }
+
+        async function speakRepeatedlyMinimalPairs(word, count) {
+            for (let i = 0; i < count; i++) {
+                await speakWordMinimalPairs(word);
+                if (i < count - 1) {
+                    await new Promise(resolve => setTimeout(resolve, currentPauseDurationMs));
+                }
+            }
+        }
+
+        // Function to show the test modal
+        function showTestModalMinimalPairs(pair) {
+            modalOption1.textContent = pair[0];
+            modalOption2.textContent = pair[1];
+            modalFeedback.textContent = ''; // Clear previous feedback
+            modalFeedback.className = 'feedback-message'; // Reset class
+            modalOption1.style.display = ''; // Ensure buttons are visible
+            modalOption2.style.display = ''; // Ensure buttons are visible
+            testModal.style.display = 'flex'; // Show the modal
+        }
+
+        // Function to check the user's answer
+        function checkAnswerMinimalPairs(userAnswer) {
+            if (userAnswer === correctWord) {
+                modalFeedback.textContent = 'Correct!';
+                modalFeedback.classList.add('correct');
+            } else {
+                modalFeedback.textContent = `Wrong! It was "${correctWord}".`;
+                modalFeedback.classList.add('wrong');
+            }
+            // Hide modal after a short delay
+            setTimeout(() => {
+                testModal.style.display = 'none';
+                modalFeedback.textContent = ''; // Clear feedback for next test
+            }, 2000);
+        }
+
+        // Event listeners for modal buttons
+        modalOption1.addEventListener('click', () => checkAnswerMinimalPairs(modalOption1.textContent));
+        modalOption2.addEventListener('click', () => checkAnswerMinimalPairs(modalOption2.textContent));
+
+        function generateButtons(wordData) {
+            wordButtonsContainer.innerHTML = '';
+            if (!wordData || wordData.length === 0) {
+                wordButtonsContainer.innerHTML = '<p>No word data available.</p>';
+                return;
+            }
+
+            wordData.forEach(categoryObj => {
+                const categoryDiv = document.createElement('div');
+                categoryDiv.className = 'category-container';
+                categoryDiv.innerHTML = `<h2>${categoryObj.category}</h2>`;
+                wordButtonsContainer.appendChild(categoryDiv);
+
+                const subcategoryArray = categoryObj.subcategories || [];
+
+                subcategoryArray.forEach(subcategoryObj => {
+                    const subcategoryDiv = document.createElement('div');
+                    subcategoryDiv.className = 'subcategory-container';
+                    if (subcategoryObj.name) {
+                        subcategoryDiv.innerHTML = `<h3>${subcategoryObj.name}</h3>`;
+                    }
+                    categoryDiv.appendChild(subcategoryDiv);
+
+                    if (subcategoryObj.description) {
+                        const descriptionP = document.createElement('p');
+                        descriptionP.textContent = subcategoryObj.description;
+                        subcategoryDiv.appendChild(descriptionP);
+                    }
+
+                    if (subcategoryObj.contrasts && subcategoryObj.contrasts.length > 0) {
+                        subcategoryObj.contrasts.forEach(contrastObj => {
+                            const contrastGroupDiv = document.createElement('div');
+                            contrastGroupDiv.className = 'contrast-group';
+                            const contrastTitle = document.createElement('h4');
+                            contrastTitle.textContent = `Contrast: ${contrastObj.description}`;
+                            contrastGroupDiv.appendChild(contrastTitle);
+                            subcategoryDiv.appendChild(contrastGroupDiv);
+
+                            contrastObj.pairs.forEach(pair => {
+                                const pairSectionDiv = document.createElement('div');
+                                pairSectionDiv.className = 'pair-section';
+
+                                const pairLabel = document.createElement('span');
+                                pairLabel.className = 'pair-label';
+                                pairLabel.textContent = `${pair[0]} vs. ${pair[1]}`;
+                                pairSectionDiv.appendChild(pairLabel);
+
+                                const buttonPairDiv = document.createElement('div');
+                                buttonPairDiv.className = 'button-pair';
+
+                                const button1 = document.createElement('button');
+                                button1.textContent = pair[0];
+                                button1.setAttribute('data-word1', pair[0]);
+                                button1.addEventListener('click', () => speakWordMinimalPairs(pair[0]));
+                                buttonPairDiv.appendChild(button1);
+
+                                const button2 = document.createElement('button');
+                                button2.textContent = pair[1];
+                                button2.setAttribute('data-word2', pair[1]);
+                                button2.addEventListener('click', () => speakWordMinimalPairs(pair[1]));
+                                buttonPairDiv.appendChild(button2);
+
+                                const speakPairButton = document.createElement('button');
+                                speakPairButton.textContent = "Listen Pair";
+                                speakPairButton.className = "listen-pair";
+                                speakPairButton.setAttribute('data-word-pair-1', pair[0]);
+                                speakPairButton.setAttribute('data-word-pair-2', pair[1]);
+                                speakPairButton.addEventListener('click', () => speakPairMinimalPairs(pair[0], pair[1]));
+                                buttonPairDiv.appendChild(speakPairButton);
+
+                                const testButton = document.createElement('button');
+                                testButton.textContent = 'Test';
+                                testButton.className = 'test-pair';
+                                testButton.addEventListener('click', async () => {
+                                    const randomIndex = Math.floor(Math.random() * pair.length);
+                                    correctWord = pair[randomIndex];
+                                    await speakRepeatedlyMinimalPairs(correctWord, 3);
+                                    showTestModalMinimalPairs(pair);
+                                });
+                                buttonPairDiv.appendChild(testButton);
+
+                                pairSectionDiv.appendChild(buttonPairDiv);
+                                contrastGroupDiv.appendChild(pairSectionDiv);
+                            });
+                        });
                     }
                 });
-            }
+            });
+        }
 
-            async function speakPair(word1, word2) {
-                await speakWord(word1);
-                await new Promise(resolve => setTimeout(resolve, currentPauseDurationMs));
-                await speakWord(word2);
-            }
+        // --- Event Listeners for new custom text boxes/buttons (Minimal Pairs) ---
+        speakFirstWordButton.addEventListener('click', () => {
+            speakWordMinimalPairs(textBox1.value);
+        });
 
-            // Function to speak a word repeatedly with pauses
-            async function speakRepeatedly(word, count) {
-                for (let i = 0; i < count; i++) {
-                    await speakWord(word);
-                    if (i < count - 1) { // Don't pause after the last word
-                        await new Promise(resolve => setTimeout(resolve, currentPauseDurationMs));
-                    }
-                }
-            }
+        speakSecondWordButton.addEventListener('click', () => {
+            speakWordMinimalPairs(textBox2.value);
+        });
 
-            // Function to show the test modal
-            function showTestModal(pair) {
-                modalOption1.textContent = pair[0];
-                modalOption2.textContent = pair[1];
-                modalFeedback.textContent = ''; // Clear previous feedback
-                modalFeedback.className = 'feedback-message'; // Reset class
-                modalOption1.style.display = ''; // Ensure buttons are visible
-                modalOption2.style.display = ''; // Ensure buttons are visible
-                testModal.style.display = 'flex'; // Show the modal
-            }
+        speakCustomPairButton.addEventListener('click', () => {
+            speakPairMinimalPairs(textBox1.value, textBox2.value);
+        });
 
-            // Function to check the user's answer
-            function checkAnswer(userAnswer) {
-                if (userAnswer === correctWord) {
-                    modalFeedback.textContent = 'Correct!';
-                    modalFeedback.classList.add('correct');
-                } else {
-                    modalFeedback.textContent = `Wrong! It was "${correctWord}".`;
-                    modalFeedback.classList.add('wrong');
-                }
-                // Hide modal after a short delay
+        testCustomPairButton.addEventListener('click', async () => {
+            const pair = [textBox1.value, textBox2.value];
+            if (!pair[0] || !pair[1]) {
+                testModal.style.display = 'flex';
+                modalQuestion.textContent = "Please enter both words in the text boxes to use the Test feature.";
+                modalOption1.style.display = 'none';
+                modalOption2.style.display = 'none';
+                modalFeedback.textContent = '';
                 setTimeout(() => {
                     testModal.style.display = 'none';
-                    modalFeedback.textContent = ''; // Clear feedback for next test
-                }, 2000);
+                    modalOption1.style.display = '';
+                    modalOption2.style.display = '';
+                }, 3000);
+                return;
             }
+            const randomIndex = Math.floor(Math.random() * pair.length);
+            correctWord = pair[randomIndex];
 
-            // Event listeners for modal buttons
-            modalOption1.addEventListener('click', () => checkAnswer(modalOption1.textContent));
-            modalOption2.addEventListener('click', () => checkAnswer(modalOption2.textContent));
+            await speakRepeatedlyMinimalPairs(correctWord, 3);
+            showTestModalMinimalPairs(pair);
+        });
 
+        // --- Event Listener for Pause Slider ---
+        pauseSlider.addEventListener('input', () => {
+            currentPauseDurationMs = parseInt(pauseSlider.value);
+            pauseValue.textContent = (currentPauseDurationMs / 1000).toFixed(1) + " sec";
+        });
 
-            function generateButtons(wordData) {
-                wordButtonsContainer.innerHTML = '';
-                if (!wordData || wordData.length === 0) {
-                    wordButtonsContainer.innerHTML = '<p>No word data available.</p>';
-                    return;
-                }
+        // --- Fix for initial empty space (adjusted for two control bars) ---
+        window.addEventListener('load', () => {
+            const formHeight = document.querySelector('form').offsetHeight;
+            const stickyControlsHeight = stickyControls.offsetHeight;
+            mainContentWrapper.style.marginTop = (formHeight + stickyControlsHeight + 30) + 'px'; // Add some extra space
+            console.log("Form height:", formHeight, "Sticky controls height:", stickyControlsHeight, "px. Set main content margin-top.");
+        });
 
-                wordData.forEach(categoryObj => {
-                    const categoryDiv = document.createElement('div');
-                    categoryDiv.className = 'category-container';
-                    categoryDiv.innerHTML = `<h2>${categoryObj.category}</h2>`;
-                    wordButtonsContainer.appendChild(categoryDiv);
+        // Initial call to generate minimal pair buttons when the DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            generateButtons(embeddedWordData);
+        });
 
-                    const subcategoryArray = categoryObj.subcategories || []; // Ensure subcategories is an array
-
-                    subcategoryArray.forEach(subcategoryObj => {
-                        const subcategoryDiv = document.createElement('div');
-                        subcategoryDiv.className = 'subcategory-container';
-                        if (subcategoryObj.name) {
-                            subcategoryDiv.innerHTML = `<h3>${subcategoryObj.name}</h3>`;
-                        }
-                        categoryDiv.appendChild(subcategoryDiv);
-
-                        if (subcategoryObj.description) { // Add description if it exists
-                            const descriptionP = document.createElement('p');
-                            descriptionP.textContent = subcategoryObj.description;
-                            subcategoryDiv.appendChild(descriptionP);
-                        }
-
-                        // Check if contrastObj and contrastObj.description exist before proceeding
-                        if (subcategoryObj.contrasts && subcategoryObj.contrasts.length > 0) {
-                            subcategoryObj.contrasts.forEach(contrastObj => {
-                                const contrastGroupDiv = document.createElement('div');
-                                contrastGroupDiv.className = 'contrast-group';
-                                const contrastTitle = document.createElement('h4'); // Create h4 element for contrast description
-                                contrastTitle.textContent = `Contrast: ${contrastObj.description}`;
-                                contrastGroupDiv.appendChild(contrastTitle); // Append h4 to contrastGroupDiv
-                                subcategoryDiv.appendChild(contrastGroupDiv); // Append contrastGroupDiv to subcategoryDiv
-
-                                contrastObj.pairs.forEach(pair => {
-                                    const pairSectionDiv = document.createElement('div'); // New wrapper for each pair's label and buttons
-                                    pairSectionDiv.className = 'pair-section';
-
-                                    const pairLabel = document.createElement('span');
-                                    pairLabel.className = 'pair-label'; // Add class for styling
-                                    pairLabel.textContent = `${pair[0]} vs. ${pair[1]}`;
-                                    pairSectionDiv.appendChild(pairLabel);
-
-                                    const buttonPairDiv = document.createElement('div');
-                                    buttonPairDiv.className = 'button-pair'; // Keep this for the buttons themselves
-
-                                    const button1 = document.createElement('button');
-                                    button1.textContent = pair[0];
-                                    button1.setAttribute('data-word1', pair[0]);
-                                    button1.addEventListener('click', () => speakWord(pair[0]));
-                                    buttonPairDiv.appendChild(button1);
-
-                                    const button2 = document.createElement('button');
-                                    button2.textContent = pair[1];
-                                    button2.setAttribute('data-word2', pair[1]);
-                                    button2.addEventListener('click', () => speakWord(pair[1]));
-                                    buttonPairDiv.appendChild(button2);
-
-                                    const speakPairButton = document.createElement('button');
-                                    speakPairButton.textContent = "Listen Pair";
-                                    speakPairButton.className = "listen-pair";
-                                    speakPairButton.setAttribute('data-word-pair-1', pair[0]);
-                                    speakPairButton.setAttribute('data-word-pair-2', pair[1]);
-                                    speakPairButton.addEventListener('click', () => speakPair(pair[0], pair[1]));
-                                    buttonPairDiv.appendChild(speakPairButton);
-
-                                    // Test button for dynamically loaded pairs
-                                    const testButton = document.createElement('button');
-                                    testButton.textContent = 'Test';
-                                    testButton.className = 'test-pair';
-                                    testButton.addEventListener('click', async () => {
-                                        const randomIndex = Math.floor(Math.random() * pair.length);
-                                        correctWord = pair[randomIndex];
-                                        await speakRepeatedly(correctWord, 3);
-                                        showTestModal(pair);
-                                    });
-                                    buttonPairDiv.appendChild(testButton); // Append the test button
-
-                                    pairSectionDiv.appendChild(buttonPairDiv); // Append buttonPairDiv to pairSectionDiv
-                                    contrastGroupDiv.appendChild(pairSectionDiv); // Append pairSectionDiv to contrastGroupDiv
-                                }); // End of pairs.forEach
-                            }); // End of contrasts.forEach
-                        }
-                    }); // End of subcategoryArray.forEach
-                }); // End of wordData.forEach
-            }
-
-
-            // --- Event Listeners for new custom text boxes/buttons ---
-            speakFirstWordButton.addEventListener('click', () => {
-                speakWord(textBox1.value);
-            });
-
-            speakSecondWordButton.addEventListener('click', () => {
-                speakWord(textBox2.value);
-            });
-
-            speakCustomPairButton.addEventListener('click', () => {
-                speakPair(textBox1.value, textBox2.value);
-            });
-
-            // --- Event Listener for custom test button in controls bar ---
-            testCustomPairButton.addEventListener('click', async () => {
-                const pair = [textBox1.value, textBox2.value];
-                if (!pair[0] || !pair[1]) {
-                    // Using a custom modal/message box instead of alert()
-                    testModal.style.display = 'flex';
-                    modalQuestion.textContent = "Please enter both words in the text boxes to use the Test feature.";
-                    modalOption1.style.display = 'none'; // Hide buttons
-                    modalOption2.style.display = 'none';
-                    modalFeedback.textContent = '';
-                    setTimeout(() => {
-                        testModal.style.display = 'none';
-                        modalOption1.style.display = ''; // Show buttons again for next use
-                        modalOption2.style.display = '';
-                    }, 3000);
-                    return;
-                }
-                const randomIndex = Math.floor(Math.random() * pair.length);
-                correctWord = pair[randomIndex];
-
-                await speakRepeatedly(correctWord, 3);
-                showTestModal(pair);
-            });
-
-
-            // --- Event Listener for Pause Slider ---
-            pauseSlider.addEventListener('input', () => {
-                currentPauseDurationMs = parseInt(pauseSlider.value);
-                pauseValue.textContent = (currentPauseDurationMs / 1000).toFixed(1) + " sec";
-            });
-
-            // --- Fix for initial empty space ---
-            window.addEventListener('load', () => {
-                const controlsHeight = stickyControls.offsetHeight;
-                mainContentWrapper.style.marginTop = controlsHeight + 'px';
-                console.log("Sticky controls height:", controlsHeight, "px. Set main content margin-top.");
-            });
-
-            // --- Event Delegation for Dynamically Generated Buttons (for single words and listen pairs) ---
-            wordButtonsContainer.addEventListener('click', (event) => {
-                const target = event.target;
-                if (target.tagName === 'BUTTON') {
-                    // Check if it's a single word button (not a pair button)
-                    if (target.hasAttribute('data-word1') && !target.classList.contains('listen-pair') && !target.classList.contains('test-pair')) {
-                        speakWord(target.getAttribute('data-word1'));
-                    } else if (target.hasAttribute('data-word2') && !target.classList.contains('listen-pair') && !target.classList.contains('test-pair')) {
-                        speakWord(target.getAttribute('data-word2'));
-                    }
-                    // The 'listen-pair' and 'test-pair' buttons have their own direct event listeners now
-                    // within the generateButtons function, so delegation for them is less critical here.
-                }
-            });
-
-            // Initial call to generate buttons with embedded data when the DOM is ready
-            document.addEventListener('DOMContentLoaded', () => {
-                generateButtons(embeddedWordData);
-            });
-
-        } else {
-            // Fallback for browsers that do not support Web Speech API
-            testModal.style.display = 'flex';
-            modalQuestion.textContent = 'Your browser does not support the Web Speech API. Please try a different browser (e.g., Chrome, Edge, Firefox).';
-            // Hide modal buttons if speech API is not supported
-            document.querySelector('.modal-buttons').style.display = 'none';
-            modalFeedback.textContent = '';
-        }
     </script>
-</body>
+  </body>
 </html>
