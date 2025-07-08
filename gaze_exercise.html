@@ -83,7 +83,8 @@
 
         input[type="number"],
         input[type="color"],
-        select {
+        select,
+        textarea { /* Added textarea */
             padding: 8px;
             border: 1px solid #ccc;
             border-radius: 8px;
@@ -96,6 +97,16 @@
             width: 100%; /* Make select full width in its group */
             min-width: 100px;
         }
+        textarea { /* Styles for textarea */
+            width: 100%;
+            min-width: 100px;
+            max-width: 200px; /* Limit max width for text area */
+            height: 60px;
+            resize: vertical; /* Allow vertical resizing */
+            text-align: left;
+            padding: 8px;
+        }
+
 
         input[type="color"] {
             -webkit-appearance: none;
@@ -218,7 +229,8 @@
             input[type="range"],
             input[type="number"],
             input[type="color"],
-            select {
+            select,
+            textarea { /* Added textarea */
                 width: 100%;
             }
             .button-group {
@@ -239,14 +251,20 @@
 
     <div class="controls-container">
         <div class="control-group">
-            <label for="speedSlider">Speed:</label>
-            <input type="range" id="speedSlider" min="1" max="60" value="3" step="0.5">
-            <span id="currentSpeed" class="current-value">3.0</span>
+            <label for="bpmSlider">BPM (Beats per Minute):</label>
+            <input type="range" id="bpmSlider" min="0" max="240" value="60" step="1">
+            <span id="currentBPM" class="current-value">60</span>
+        </div>
+
+        <div class="control-group">
+            <label for="bpmSoundSlider">BPM Sound (0-4):</label>
+            <input type="range" id="bpmSoundSlider" min="0" max="4" value="1" step="1">
+            <span id="currentBPMSound" class="current-value">1</span>
         </div>
 
         <div class="control-group">
             <label for="sizeSlider">Size:</label>
-            <input type="range" id="sizeSlider" min="10" max="100" value="30" step="5">
+            <input type="range" id="sizeSlider" min="10" max="200" value="30" step="5"> <!-- Max changed to 200 -->
             <span id="currentSize" class="current-value">30 px</span>
         </div>
 
@@ -287,9 +305,25 @@
             </select>
         </div>
 
+        <div class="control-group">
+            <label for="textInput">Text:</label>
+            <textarea id="textInput" placeholder="Enter text here"></textarea>
+        </div>
+
+        <div class="control-group">
+            <label for="textColorPicker">Text Color:</label>
+            <input type="color" id="textColorPicker" value="#FFFFFF">
+            <span id="currentTextColor" class="current-value">#FFFFFF</span>
+        </div>
+
         <div class="button-group">
             <button id="startButton">Start</button>
             <button id="stopButton">Stop</button>
+        </div>
+
+        <div class="checkbox-group">
+            <input type="checkbox" id="moveShapeCheckbox" checked>
+            <label for="moveShapeCheckbox">Move Shape</label>
         </div>
 
         <div class="checkbox-group">
@@ -304,29 +338,36 @@
         const canvas = document.getElementById('gazeCanvas');
         const ctx = canvas.getContext('2d');
 
-        const speedSlider = document.getElementById('speedSlider');
-        const currentSpeedSpan = document.getElementById('currentSpeed');
+        const bpmSlider = document.getElementById('bpmSlider');
+        const currentBPMSpan = document.getElementById('currentBPM');
+        const bpmSoundSlider = document.getElementById('bpmSoundSlider');
+        const currentBPMSoundSpan = document.getElementById('currentBPMSound');
         const sizeSlider = document.getElementById('sizeSlider');
         const currentSizeSpan = document.getElementById('currentSize');
         const durationInput = document.getElementById('durationInput');
         const currentDurationSpan = document.getElementById('currentDuration');
         const shapeColorPicker = document.getElementById('shapeColorPicker');
         const currentShapeColorSpan = document.getElementById('currentShapeColor');
-        const backgroundColorPicker = document.getElementById('backgroundColorPicker'); // New background color picker
-        const currentBackgroundColorSpan = document.getElementById('currentBackgroundColor'); // New background color span
+        const backgroundColorPicker = document.getElementById('backgroundColorPicker');
+        const currentBackgroundColorSpan = document.getElementById('currentBackgroundColor');
         const directionSelect = document.getElementById('directionSelect');
-        const shapeSelect = document.getElementById('shapeSelect'); // New shape select
+        const shapeSelect = document.getElementById('shapeSelect');
+        const textInput = document.getElementById('textInput');
+        const textColorPicker = document.getElementById('textColorPicker');
+        const currentTextColorSpan = document.getElementById('currentTextColor');
         const startButton = document.getElementById('startButton');
         const stopButton = document.getElementById('stopButton');
         const fullscreenCheckbox = document.getElementById('fullscreenCheckbox');
+        const moveShapeCheckbox = document.getElementById('moveShapeCheckbox');
 
         let animationFrameId;
         let shape = {
-            x: 50,
+            // Default position now centered
+            x: canvas.width / 2,
             y: canvas.height / 2,
-            size: parseInt(sizeSlider.value), // Renamed radius to size for generic use
+            size: parseInt(sizeSlider.value),
             color: shapeColorPicker.value,
-            dx: parseFloat(speedSlider.value),
+            dx: 0,
             dy: 0
         };
         let startTime = 0;
@@ -334,20 +375,61 @@
         let currentDirection = directionSelect.value;
         let currentShape = shapeSelect.value;
         let currentBackgroundColor = backgroundColorPicker.value;
+        let currentTextColor = textColorPicker.value;
 
-        // Function to draw the shape
+        // Audio context for metronome sound
+        let audioContext;
+        let lastBeatTime = 0;
+        let beatIntervalMs = 0;
+        let subdivisions = 1; // 0: no sound, 1: 1 tick/beat, 2: 2 ticks/beat, etc.
+
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            // Resume audio context to allow sound playback. Required due to browser autoplay policies.
+            if (audioContext.state === 'suspended') {
+                audioContext.resume().catch(e => console.error("Failed to resume AudioContext:", e));
+            }
+        }
+
+        /**
+         * Plays a short "tick" sound.
+         * @param {number} frequency The base frequency of the sound. Higher for main beat.
+         * @param {number} duration The duration of the sound in seconds.
+         * @param {number} volume The volume of the sound (0.0 to 1.0).
+         */
+        function playClick(frequency = 800, duration = 0.02, volume = 0.5) {
+            if (!audioContext || subdivisions === 0) return; // No sound if subdivisions is 0
+
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.type = 'sine'; // Simple sine wave for a clean tick
+            oscillator.frequency.value = frequency;
+
+            // Create a quick attack and decay for a "tick" sound
+            gainNode.gain.setValueAtTime(0, audioContext.currentTime); // Start from 0 volume
+            gainNode.gain.linearRampToValueAtTime(volume, audioContext.currentTime + 0.001); // Quick attack
+            gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + duration); // Quick decay to almost silent
+
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + duration);
+        }
+
+
+        // Function to draw the shape and text
         function drawShape() {
-            // Draw background first
             ctx.fillStyle = currentBackgroundColor;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Clear shape area (optional, but good practice if not filling background entirely)
-            // ctx.clearRect(0, 0, canvas.width, canvas.height); // This clears the whole canvas
 
             ctx.fillStyle = shape.color;
             ctx.beginPath();
 
-            const halfSize = shape.size; // For square and diamond, size is half the side/diagonal
+            const halfSize = shape.size;
 
             switch (currentShape) {
                 case 'dot':
@@ -357,14 +439,70 @@
                     ctx.rect(shape.x - halfSize, shape.y - halfSize, halfSize * 2, halfSize * 2);
                     break;
                 case 'diamond':
-                    ctx.moveTo(shape.x, shape.y - halfSize); // Top point
-                    ctx.lineTo(shape.x + halfSize, shape.y);   // Right point
-                    ctx.lineTo(shape.x, shape.y + halfSize);   // Bottom point
-                    ctx.lineTo(shape.x - halfSize, shape.y);   // Left point
+                    ctx.moveTo(shape.x, shape.y - halfSize);
+                    ctx.lineTo(shape.x + halfSize, shape.y);
+                    ctx.lineTo(shape.x, shape.y + halfSize);
+                    ctx.lineTo(shape.x - halfSize, shape.y);
                     ctx.closePath();
                     break;
             }
             ctx.fill();
+
+            // Draw text if available
+            const textToDisplay = textInput.value.trim();
+            if (textToDisplay) {
+                ctx.fillStyle = currentTextColor;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+
+                // Determine max font size to fit within the shape
+                let fontSize = shape.size * 1.5;
+                ctx.font = `${fontSize}px sans-serif`;
+                let textWidth = ctx.measureText(textToDisplay).width;
+                let textHeight = fontSize;
+
+                // Adjust font size until text fits within the shape (considering padding)
+                const paddingFactor = 0.8;
+                const maxDim = Math.min(halfSize * 2 * paddingFactor, halfSize * 2 * paddingFactor);
+
+                while ((textWidth > maxDim || textHeight > maxDim) && fontSize > 5) {
+                    fontSize -= 1;
+                    ctx.font = `${fontSize}px sans-serif`;
+                    textWidth = ctx.measureText(textToDisplay).width;
+                    textHeight = fontSize;
+                }
+
+                ctx.fillText(textToDisplay, shape.x, shape.y);
+            }
+        }
+
+        function calculateSpeeds() {
+            const bpm = parseInt(bpmSlider.value);
+            if (bpm === 0) {
+                shape.dx = 0;
+                shape.dy = 0;
+                beatIntervalMs = 0;
+                return;
+            }
+
+            beatIntervalMs = (60 / bpm) * 1000; // Milliseconds per beat
+
+            // Calculate movement per frame for a round trip within one beat
+            // A round trip covers 2 * (canvas edge - shape size) pixels in one direction
+            // So, for horizontal: (canvas.width - 2 * shape.size) pixels in one direction, then back.
+            // Total distance for a horizontal beat: 2 * (canvas.width - 2 * shape.size)
+            // Total distance for a vertical beat: 2 * (canvas.height - 2 * shape.size)
+
+            // Speed in pixels per millisecond
+            let speedPxPerMsX = (canvas.width - 2 * shape.size) / beatIntervalMs;
+            let speedPxPerMsY = (canvas.height - 2 * shape.size) / beatIntervalMs;
+
+            // Convert to speed per animation frame (assuming 60 FPS, 1 frame ~ 16.67ms)
+            // This is a simplification; for precise timing, delta time should be used in animate()
+            const frameDuration = 1000 / 60; // Approx ms per frame at 60 FPS
+
+            shape.dx = speedPxPerMsX * frameDuration;
+            shape.dy = speedPxPerMsY * frameDuration;
         }
 
         // Function to generate a random speed value (positive or negative)
@@ -383,48 +521,76 @@
                 return;
             }
 
-            switch (currentDirection) {
-                case 'horizontal':
-                    shape.x += shape.dx;
-                    break;
-                case 'vertical':
-                    shape.y += shape.dy;
-                    break;
-                case 'diagonal':
-                case 'random':
-                    shape.x += shape.dx;
-                    shape.y += shape.dy;
-                    break;
-            }
+            // Metronome sound logic
+            if (beatIntervalMs > 0 && subdivisions > 0) {
+                const timeIntoBeat = (elapsedTime % beatIntervalMs);
+                const beatUnit = beatIntervalMs / subdivisions;
 
-            // Boundary checking (using shape.size for generic half-width/height)
-            const minX = shape.size;
-            const maxX = canvas.width - shape.size;
-            const minY = shape.size;
-            const maxY = canvas.height - shape.size;
-
-            // Bounce off horizontal walls
-            if (shape.x > maxX || shape.x < minX) {
-                shape.dx *= -1;
-                // Adjust position to prevent sticking
-                if (shape.x > maxX) shape.x = maxX;
-                else if (shape.x < minX) shape.x = minX;
-
-                if (currentDirection === 'random') {
-                     shape.dy = getRandomSpeed(parseFloat(speedSlider.value));
+                for (let i = 0; i < subdivisions; i++) {
+                    const threshold = beatUnit * i;
+                    // Check if current time has crossed the threshold since last frame
+                    // and that it's not the very beginning of the animation (startTime == 0 case)
+                    // The condition `lastBeatTime === 0` handles the very first beat when startTime is set.
+                    // The `(lastBeatTime % beatIntervalMs) < threshold` ensures the sound only plays once
+                    // when the threshold is crossed, not continuously while `timeIntoBeat >= threshold`.
+                    if (timeIntoBeat >= threshold && (lastBeatTime === 0 || (lastBeatTime % beatIntervalMs) < threshold)) {
+                        // Play a slightly higher frequency for the first beat (downbeat)
+                        playClick(i === 0 ? 900 : 700);
+                    }
                 }
             }
+            lastBeatTime = currentTime;
 
-            // Bounce off vertical walls
-            if (shape.y > maxY || shape.y < minY) {
-                shape.dy *= -1;
-                // Adjust position to prevent sticking
-                if (shape.y > maxY) shape.y = maxY;
-                else if (shape.y < minY) shape.y = minY;
 
-                if (currentDirection === 'random') {
-                    shape.dx = getRandomSpeed(parseFloat(speedSlider.value));
+            if (moveShapeCheckbox.checked) {
+                switch (currentDirection) {
+                    case 'horizontal':
+                        shape.x += shape.dx;
+                        break;
+                    case 'vertical':
+                        shape.y += shape.dy;
+                        break;
+                    case 'diagonal':
+                    case 'random':
+                        shape.x += shape.dx;
+                        shape.y += shape.dy;
+                        break;
                 }
+
+                const minX = shape.size;
+                const maxX = canvas.width - shape.size;
+                const minY = shape.size;
+                const maxY = canvas.height - shape.size;
+
+                // Bounce off horizontal walls
+                if (shape.x > maxX || shape.x < minX) {
+                    shape.dx *= -1;
+                    // Adjust position to prevent sticking
+                    if (shape.x > maxX) shape.x = maxX;
+                    else if (shape.x < minX) shape.x = minX;
+
+                    if (currentDirection === 'random') {
+                         shape.dy = getRandomSpeed(Math.abs(shape.dy || shape.dx)); // Use current speed magnitude
+                    }
+                }
+
+                // Bounce off vertical walls
+                if (shape.y > maxY || shape.y < minY) {
+                    shape.dy *= -1;
+                    // Adjust position to prevent sticking
+                    if (shape.y > maxY) shape.y = maxY;
+                    else if (shape.y < minY) shape.y = minY;
+
+                    if (currentDirection === 'random') {
+                        shape.dx = getRandomSpeed(Math.abs(shape.dx || shape.dy)); // Use current speed magnitude
+                    }
+                }
+            } else {
+                // If not moving, keep it centered
+                shape.x = canvas.width / 2;
+                shape.y = canvas.height / 2;
+                shape.dx = 0;
+                shape.dy = 0;
             }
 
             drawShape();
@@ -438,36 +604,46 @@
                 cancelAnimationFrame(animationFrameId);
             }
             startTime = 0;
+            lastBeatTime = 0; // Reset beat tracking for new animation start
+            initAudio(); // Initialize and resume audio context
 
-            const baseSpeed = parseFloat(speedSlider.value);
+            calculateSpeeds();
 
-            // Reset position and direction based on selected mode
-            switch (currentDirection) {
-                case 'horizontal':
-                    shape.dx = baseSpeed;
-                    shape.dy = 0;
-                    shape.x = shape.size; // Start from left edge
-                    shape.y = canvas.height / 2; // Keep centered vertically
-                    break;
-                case 'vertical':
-                    shape.dx = 0;
-                    shape.dy = baseSpeed;
-                    shape.x = canvas.width / 2; // Keep centered horizontally
-                    shape.y = shape.size; // Start from top edge
-                    break;
-                case 'diagonal':
-                    shape.dx = baseSpeed; // Move right
-                    shape.dy = -baseSpeed; // Move up
-                    shape.x = shape.size; // Start from bottom-left corner
-                    shape.y = canvas.height - shape.size;
-                    break;
-                case 'random':
-                    shape.dx = getRandomSpeed(baseSpeed);
-                    shape.dy = getRandomSpeed(baseSpeed);
-                    shape.x = canvas.width / 2;
-                    shape.y = canvas.height / 2;
-                    break;
+            if (moveShapeCheckbox.checked) {
+                switch (currentDirection) {
+                    case 'horizontal':
+                        shape.dx = Math.abs(shape.dx); // Ensure initial movement is to the right
+                        shape.dy = 0;
+                        shape.x = shape.size; // Start from left edge for full trip
+                        shape.y = canvas.height / 2; // Keep centered vertically
+                        break;
+                    case 'vertical':
+                        shape.dx = 0;
+                        shape.dy = Math.abs(shape.dy); // Ensure initial movement is downwards
+                        shape.x = canvas.width / 2; // Keep centered horizontally
+                        shape.y = shape.size; // Start from top edge for full trip
+                        break;
+                    case 'diagonal':
+                        shape.dx = Math.abs(shape.dx); // Move right
+                        shape.dy = -Math.abs(shape.dy); // Move up
+                        shape.x = shape.size; // Start from bottom-left corner for full trip
+                        shape.y = canvas.height - shape.size;
+                        break;
+                    case 'random':
+                        shape.dx = getRandomSpeed(Math.abs(shape.dx));
+                        shape.dy = getRandomSpeed(Math.abs(shape.dy));
+                        shape.x = canvas.width / 2;
+                        shape.y = canvas.height / 2;
+                        break;
+                }
+            } else {
+                // If not moving, ensure it's centered and has no velocity
+                shape.x = canvas.width / 2;
+                shape.y = canvas.height / 2;
+                shape.dx = 0;
+                shape.dy = 0;
             }
+
 
             startButton.disabled = true;
             stopButton.disabled = false;
@@ -500,6 +676,7 @@
             startButton.disabled = false;
             stopButton.disabled = true;
             console.log("Animation stopped.");
+            lastBeatTime = 0; // Reset beat tracking
 
             // Exit fullscreen if currently in fullscreen AND the checkbox was checked
             if (fullscreenCheckbox.checked && (document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement)) {
@@ -533,17 +710,28 @@
 
 
         // Event Listeners for controls
-        speedSlider.addEventListener('input', (event) => {
-            const newSpeed = parseFloat(event.target.value);
-            // Update dx/dy while maintaining current direction sign
-            shape.dx = newSpeed * Math.sign(shape.dx || 1);
-            shape.dy = newSpeed * Math.sign(shape.dy || 1);
-            currentSpeedSpan.textContent = newSpeed.toFixed(1);
+        bpmSlider.addEventListener('input', (event) => {
+            const newBPM = parseInt(event.target.value);
+            currentBPMSpan.textContent = newBPM;
+            calculateSpeeds();
+            if (!animationFrameId) {
+                if (!moveShapeCheckbox.checked) {
+                    shape.x = canvas.width / 2;
+                    shape.y = canvas.height / 2;
+                }
+                drawShape();
+            }
+        });
+
+        bpmSoundSlider.addEventListener('input', (event) => {
+            subdivisions = parseInt(event.target.value);
+            currentBPMSoundSpan.textContent = subdivisions;
         });
 
         sizeSlider.addEventListener('input', (event) => {
             shape.size = parseInt(event.target.value);
             currentSizeSpan.textContent = `${shape.size} px`;
+            calculateSpeeds();
             if (!animationFrameId) {
                 drawShape();
             }
@@ -565,63 +753,92 @@
         backgroundColorPicker.addEventListener('input', (event) => {
             currentBackgroundColor = event.target.value;
             currentBackgroundColorSpan.textContent = event.target.value;
-            drawShape(); // Redraw immediately to update background
+            drawShape();
         });
 
         directionSelect.addEventListener('change', (event) => {
             currentDirection = event.target.value;
-            stopAnimation();
+            stopAnimation(); // Stop to reset position on direction change
             drawShape();
         });
 
         shapeSelect.addEventListener('change', (event) => {
             currentShape = event.target.value;
-            stopAnimation();
+            stopAnimation(); // Stop to reset position on shape change
             drawShape();
         });
+
+        textInput.addEventListener('input', () => {
+            if (!animationFrameId) {
+                drawShape();
+            }
+        });
+
+        textColorPicker.addEventListener('input', (event) => {
+            currentTextColor = event.target.value;
+            currentTextColorSpan.textContent = event.target.value;
+            if (!animationFrameId) {
+                drawShape();
+            }
+        });
+
+        moveShapeCheckbox.addEventListener('change', () => {
+            if (!moveShapeCheckbox.checked) {
+                shape.x = canvas.width / 2;
+                shape.y = canvas.height / 2;
+                shape.dx = 0;
+                shape.dy = 0;
+                drawShape();
+            } else {
+                calculateSpeeds();
+                if (animationFrameId) {
+                    startAnimation();
+                }
+            }
+        });
+
 
         startButton.addEventListener('click', startAnimation);
         stopButton.addEventListener('click', stopAnimation);
 
         // Initial draw when the page loads
         document.addEventListener('DOMContentLoaded', () => {
-            drawShape();
             stopButton.disabled = true;
-            currentSpeedSpan.textContent = parseFloat(speedSlider.value).toFixed(1);
+            currentBPMSpan.textContent = bpmSlider.value;
+            currentBPMSoundSpan.textContent = bpmSoundSlider.value;
             currentSizeSpan.textContent = `${sizeSlider.value} px`;
             currentDurationSpan.textContent = `${durationInput.value} seconds`;
             currentShapeColorSpan.textContent = shapeColorPicker.value;
             currentBackgroundColorSpan.textContent = backgroundColorPicker.value;
+            currentTextColorSpan.textContent = textColorPicker.value;
+            calculateSpeeds();
+            resizeCanvas();
         });
 
         // Handle canvas resizing for responsiveness
         function resizeCanvas() {
-            // When in fullscreen, canvas should occupy the full screen
             if (document.fullscreenElement === canvas || document.webkitFullscreenElement === canvas || document.msFullscreenElement === canvas) {
                 canvas.width = window.innerWidth;
                 canvas.height = window.innerHeight;
             } else {
-                // When not in fullscreen, revert to responsive behavior based on container
                 const containerWidth = canvas.parentElement.clientWidth;
                 canvas.width = Math.min(containerWidth, 800);
-                canvas.height = canvas.width * 0.75; // Maintain a 4:3 aspect ratio
+                canvas.height = canvas.width * 0.75;
             }
 
-            // Re-center shape after resize if not animating, or adjust its position if animating
-            if (!animationFrameId) {
+            // Always center if not moving, otherwise adjust for boundaries
+            if (!animationFrameId || !moveShapeCheckbox.checked) {
                 shape.x = canvas.width / 2;
                 shape.y = canvas.height / 2;
             } else {
-                // Adjust position to stay within new bounds if animating
                 shape.x = Math.max(shape.size, Math.min(shape.x, canvas.width - shape.size));
                 shape.y = Math.max(shape.size, Math.min(shape.y, canvas.height - shape.size));
             }
-            drawShape(); // Redraw content after resize
+            calculateSpeeds();
+            drawShape();
         }
 
         window.addEventListener('resize', resizeCanvas);
-        // Initial resize call
-        resizeCanvas();
 
     </script>
 </body>
