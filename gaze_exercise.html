@@ -264,7 +264,7 @@
 
         <div class="control-group">
             <label for="sizeSlider">Size:</label>
-            <input type="range" id="sizeSlider" min="10" max="200" value="30" step="5"> <!-- Max changed to 200 -->
+            <input type="range" id="sizeSlider" min="10" max="200" value="30" step="5">
             <span id="currentSize" class="current-value">30 px</span>
         </div>
 
@@ -294,6 +294,20 @@
                 <option value="diagonal">Diagonal</option>
                 <option value="random">Random</option>
             </select>
+        </div>
+
+        <!-- New X Position Slider (initially hidden) -->
+        <div class="control-group" id="xPositionControlGroup" style="display: none;">
+            <label for="xPositionSlider">X Position:</label>
+            <input type="range" id="xPositionSlider" min="0" max="800" value="400" step="1">
+            <span id="currentXPosition" class="current-value">400 px</span>
+        </div>
+
+        <!-- New Y Position Slider (initially hidden) -->
+        <div class="control-group" id="yPositionControlGroup" style="display: none;">
+            <label for="yPositionSlider">Y Position:</label>
+            <input type="range" id="yPositionSlider" min="0" max="400" value="200" step="1">
+            <span id="currentYPosition" class="current-value">200 px</span>
         </div>
 
         <div class="control-group">
@@ -360,11 +374,20 @@
         const fullscreenCheckbox = document.getElementById('fullscreenCheckbox');
         const moveShapeCheckbox = document.getElementById('moveShapeCheckbox');
 
+        // New position sliders and their display groups
+        const xPositionSlider = document.getElementById('xPositionSlider');
+        const currentXPositionSpan = document.getElementById('currentXPosition');
+        const xPositionControlGroup = document.getElementById('xPositionControlGroup');
+
+        const yPositionSlider = document.getElementById('yPositionSlider');
+        const currentYPositionSpan = document.getElementById('currentYPosition');
+        const yPositionControlGroup = document.getElementById('yPositionControlGroup');
+
+
         let animationFrameId;
         let shape = {
-            // Default position now centered
-            x: canvas.width / 2,
-            y: canvas.height / 2,
+            x: canvas.width / 2, // Default position now centered
+            y: canvas.height / 2, // Default position now centered
             size: parseInt(sizeSlider.value),
             color: shapeColorPicker.value,
             dx: 0,
@@ -399,7 +422,7 @@
          * @param {number} duration The duration of the sound in seconds.
          * @param {number} volume The volume of the sound (0.0 to 1.0).
          */
-        function playClick(frequency = 800, duration = 0.02, volume = 0.5) {
+        function playClick(frequency = 1000, duration = 0.01, volume = 0.7) { // Higher frequency, shorter duration, slightly louder
             if (!audioContext || subdivisions === 0) return; // No sound if subdivisions is 0
 
             const oscillator = audioContext.createOscillator();
@@ -408,13 +431,13 @@
             oscillator.connect(gainNode);
             gainNode.connect(audioContext.destination);
 
-            oscillator.type = 'sine'; // Simple sine wave for a clean tick
+            oscillator.type = 'square'; // Changed to square wave for a more "digital" tick
             oscillator.frequency.value = frequency;
 
-            // Create a quick attack and decay for a "tick" sound
-            gainNode.gain.setValueAtTime(0, audioContext.currentTime); // Start from 0 volume
-            gainNode.gain.linearRampToValueAtTime(volume, audioContext.currentTime + 0.001); // Quick attack
-            gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + duration); // Quick decay to almost silent
+            // Very quick attack and decay for a sharp tick
+            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+            gainNode.gain.linearRampToValueAtTime(volume, audioContext.currentTime + 0.0005); // Very fast attack
+            gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + duration); // Fast decay
 
             oscillator.start(audioContext.currentTime);
             oscillator.stop(audioContext.currentTime + duration);
@@ -488,17 +511,17 @@
             beatIntervalMs = (60 / bpm) * 1000; // Milliseconds per beat
 
             // Calculate movement per frame for a round trip within one beat
-            // A round trip covers 2 * (canvas edge - shape size) pixels in one direction
-            // So, for horizontal: (canvas.width - 2 * shape.size) pixels in one direction, then back.
-            // Total distance for a horizontal beat: 2 * (canvas.width - 2 * shape.size)
-            // Total distance for a vertical beat: 2 * (canvas.height - 2 * shape.size)
+            // A round trip covers 2 * (canvas edge - 2 * shape size) pixels in one direction
+            // The distance is from one edge to the other, considering the shape's size.
+            // For horizontal: (canvas.width - 2 * shape.size) is the travel distance in one direction.
+            // Total distance for a horizontal beat (round trip): 2 * (canvas.width - 2 * shape.size)
+            // Total distance for a vertical beat (round trip): 2 * (canvas.height - 2 * shape.size)
 
             // Speed in pixels per millisecond
             let speedPxPerMsX = (canvas.width - 2 * shape.size) / beatIntervalMs;
             let speedPxPerMsY = (canvas.height - 2 * shape.size) / beatIntervalMs;
 
             // Convert to speed per animation frame (assuming 60 FPS, 1 frame ~ 16.67ms)
-            // This is a simplification; for precise timing, delta time should be used in animate()
             const frameDuration = 1000 / 60; // Approx ms per frame at 60 FPS
 
             shape.dx = speedPxPerMsX * frameDuration;
@@ -529,13 +552,9 @@
                 for (let i = 0; i < subdivisions; i++) {
                     const threshold = beatUnit * i;
                     // Check if current time has crossed the threshold since last frame
-                    // and that it's not the very beginning of the animation (startTime == 0 case)
-                    // The condition `lastBeatTime === 0` handles the very first beat when startTime is set.
-                    // The `(lastBeatTime % beatIntervalMs) < threshold` ensures the sound only plays once
-                    // when the threshold is crossed, not continuously while `timeIntoBeat >= threshold`.
                     if (timeIntoBeat >= threshold && (lastBeatTime === 0 || (lastBeatTime % beatIntervalMs) < threshold)) {
                         // Play a slightly higher frequency for the first beat (downbeat)
-                        playClick(i === 0 ? 900 : 700);
+                        playClick(i === 0 ? 1200 : 800); // Higher frequencies for sharper ticks
                     }
                 }
             }
@@ -546,9 +565,13 @@
                 switch (currentDirection) {
                     case 'horizontal':
                         shape.x += shape.dx;
+                        // Y position is fixed by slider
+                        shape.y = parseInt(yPositionSlider.value);
                         break;
                     case 'vertical':
                         shape.y += shape.dy;
+                        // X position is fixed by slider
+                        shape.x = parseInt(xPositionSlider.value);
                         break;
                     case 'diagonal':
                     case 'random':
@@ -586,9 +609,17 @@
                     }
                 }
             } else {
-                // If not moving, keep it centered
-                shape.x = canvas.width / 2;
-                shape.y = canvas.height / 2;
+                // If not moving, keep it centered or at slider position
+                if (currentDirection === 'horizontal') {
+                    shape.x = canvas.width / 2;
+                    shape.y = parseInt(yPositionSlider.value);
+                } else if (currentDirection === 'vertical') {
+                    shape.x = parseInt(xPositionSlider.value);
+                    shape.y = canvas.height / 2;
+                } else {
+                    shape.x = canvas.width / 2;
+                    shape.y = canvas.height / 2;
+                }
                 shape.dx = 0;
                 shape.dy = 0;
             }
@@ -613,21 +644,20 @@
                 switch (currentDirection) {
                     case 'horizontal':
                         shape.dx = Math.abs(shape.dx); // Ensure initial movement is to the right
-                        shape.dy = 0;
                         shape.x = shape.size; // Start from left edge for full trip
-                        shape.y = canvas.height / 2; // Keep centered vertically
+                        shape.y = parseInt(yPositionSlider.value); // Use Y slider for fixed axis
                         break;
                     case 'vertical':
                         shape.dx = 0;
                         shape.dy = Math.abs(shape.dy); // Ensure initial movement is downwards
-                        shape.x = canvas.width / 2; // Keep centered horizontally
+                        shape.x = parseInt(xPositionSlider.value); // Use X slider for fixed axis
                         shape.y = shape.size; // Start from top edge for full trip
                         break;
                     case 'diagonal':
                         shape.dx = Math.abs(shape.dx); // Move right
                         shape.dy = -Math.abs(shape.dy); // Move up
-                        shape.x = shape.size; // Start from bottom-left corner for full trip
-                        shape.y = canvas.height - shape.size;
+                        shape.x = canvas.width / 2; // Start from center for diagonal
+                        shape.y = canvas.height / 2; // Start from center for diagonal
                         break;
                     case 'random':
                         shape.dx = getRandomSpeed(Math.abs(shape.dx));
@@ -637,9 +667,17 @@
                         break;
                 }
             } else {
-                // If not moving, ensure it's centered and has no velocity
-                shape.x = canvas.width / 2;
-                shape.y = canvas.height / 2;
+                // If not moving, ensure it's centered or at slider position and has no velocity
+                if (currentDirection === 'horizontal') {
+                    shape.x = canvas.width / 2;
+                    shape.y = parseInt(yPositionSlider.value);
+                } else if (currentDirection === 'vertical') {
+                    shape.x = parseInt(xPositionSlider.value);
+                    shape.y = canvas.height / 2;
+                } else {
+                    shape.x = canvas.width / 2;
+                    shape.y = canvas.height / 2;
+                }
                 shape.dx = 0;
                 shape.dy = 0;
             }
@@ -715,9 +753,18 @@
             currentBPMSpan.textContent = newBPM;
             calculateSpeeds();
             if (!animationFrameId) {
+                // If not animating, ensure position is updated based on current settings
                 if (!moveShapeCheckbox.checked) {
-                    shape.x = canvas.width / 2;
-                    shape.y = canvas.height / 2;
+                    if (currentDirection === 'horizontal') {
+                        shape.x = canvas.width / 2;
+                        shape.y = parseInt(yPositionSlider.value);
+                    } else if (currentDirection === 'vertical') {
+                        shape.x = parseInt(xPositionSlider.value);
+                        shape.y = canvas.height / 2;
+                    } else {
+                        shape.x = canvas.width / 2;
+                        shape.y = canvas.height / 2;
+                    }
                 }
                 drawShape();
             }
@@ -732,6 +779,12 @@
             shape.size = parseInt(event.target.value);
             currentSizeSpan.textContent = `${shape.size} px`;
             calculateSpeeds();
+            // Update min/max for position sliders based on new size
+            xPositionSlider.min = shape.size;
+            xPositionSlider.max = canvas.width - shape.size;
+            yPositionSlider.min = shape.size;
+            yPositionSlider.max = canvas.height - shape.size;
+
             if (!animationFrameId) {
                 drawShape();
             }
@@ -758,9 +811,49 @@
 
         directionSelect.addEventListener('change', (event) => {
             currentDirection = event.target.value;
+            // Hide all position sliders first
+            xPositionControlGroup.style.display = 'none';
+            yPositionControlGroup.style.display = 'none';
+
+            if (currentDirection === 'horizontal') {
+                yPositionControlGroup.style.display = 'flex'; // Show Y slider for horizontal
+                // If not moving, set Y position immediately
+                if (!moveShapeCheckbox.checked) {
+                    shape.y = parseInt(yPositionSlider.value);
+                }
+            } else if (currentDirection === 'vertical') {
+                xPositionControlGroup.style.display = 'flex'; // Show X slider for vertical
+                // If not moving, set X position immediately
+                if (!moveShapeCheckbox.checked) {
+                    shape.x = parseInt(xPositionSlider.value);
+                }
+            } else {
+                // For diagonal/random, center the shape if not moving
+                if (!moveShapeCheckbox.checked) {
+                    shape.x = canvas.width / 2;
+                    shape.y = canvas.height / 2;
+                }
+            }
             stopAnimation(); // Stop to reset position on direction change
             drawShape();
         });
+
+        xPositionSlider.addEventListener('input', (event) => {
+            shape.x = parseInt(event.target.value);
+            currentXPositionSpan.textContent = `${shape.x} px`;
+            if (!animationFrameId || !moveShapeCheckbox.checked) {
+                drawShape();
+            }
+        });
+
+        yPositionSlider.addEventListener('input', (event) => {
+            shape.y = parseInt(event.target.value);
+            currentYPositionSpan.textContent = `${shape.y} px`;
+            if (!animationFrameId || !moveShapeCheckbox.checked) {
+                drawShape();
+            }
+        });
+
 
         shapeSelect.addEventListener('change', (event) => {
             currentShape = event.target.value;
@@ -784,15 +877,24 @@
 
         moveShapeCheckbox.addEventListener('change', () => {
             if (!moveShapeCheckbox.checked) {
-                shape.x = canvas.width / 2;
-                shape.y = canvas.height / 2;
+                // If unchecked, immediately center the shape or set to slider position
+                if (currentDirection === 'horizontal') {
+                    shape.x = canvas.width / 2;
+                    shape.y = parseInt(yPositionSlider.value);
+                } else if (currentDirection === 'vertical') {
+                    shape.x = parseInt(xPositionSlider.value);
+                    shape.y = canvas.height / 2;
+                } else {
+                    shape.x = canvas.width / 2;
+                    shape.y = canvas.height / 2;
+                }
                 shape.dx = 0;
                 shape.dy = 0;
                 drawShape();
             } else {
                 calculateSpeeds();
                 if (animationFrameId) {
-                    startAnimation();
+                    startAnimation(); // Restart animation to apply movement
                 }
             }
         });
@@ -811,8 +913,49 @@
             currentShapeColorSpan.textContent = shapeColorPicker.value;
             currentBackgroundColorSpan.textContent = backgroundColorPicker.value;
             currentTextColorSpan.textContent = textColorPicker.value;
+
+            // Initialize position slider ranges and values
+            xPositionSlider.min = shape.size;
+            xPositionSlider.max = canvas.width - shape.size;
+            xPositionSlider.value = canvas.width / 2; // Default to center
+            currentXPositionSpan.textContent = `${xPositionSlider.value} px`;
+
+            yPositionSlider.min = shape.size;
+            yPositionSlider.max = canvas.height - shape.size;
+            yPositionSlider.value = canvas.height / 2; // Default to center
+            currentYPositionSpan.textContent = `${yPositionSlider.value} px`;
+
+            // Set initial position based on default direction and moveShape status
+            if (!moveShapeCheckbox.checked) {
+                if (currentDirection === 'horizontal') {
+                    shape.x = canvas.width / 2;
+                    shape.y = parseInt(yPositionSlider.value);
+                } else if (currentDirection === 'vertical') {
+                    shape.x = parseInt(xPositionSlider.value);
+                    shape.y = canvas.height / 2;
+                } else {
+                    shape.x = canvas.width / 2;
+                    shape.y = canvas.height / 2;
+                }
+            } else {
+                // For moving, set initial position for the chosen direction
+                if (currentDirection === 'horizontal') {
+                    shape.x = shape.size;
+                    shape.y = parseInt(yPositionSlider.value);
+                } else if (currentDirection === 'vertical') {
+                    shape.x = parseInt(xPositionSlider.value);
+                    shape.y = shape.size;
+                } else {
+                    shape.x = canvas.width / 2;
+                    shape.y = canvas.height / 2;
+                }
+            }
+
+            // Trigger direction change to show/hide relevant slider initially
+            directionSelect.dispatchEvent(new Event('change'));
+
             calculateSpeeds();
-            resizeCanvas();
+            resizeCanvas(); // Ensure canvas is correctly sized and shape positioned
         });
 
         // Handle canvas resizing for responsiveness
@@ -826,10 +969,31 @@
                 canvas.height = canvas.width * 0.75;
             }
 
+            // Update min/max for position sliders based on new canvas size
+            xPositionSlider.min = shape.size;
+            xPositionSlider.max = canvas.width - shape.size;
+            yPositionSlider.min = shape.size;
+            yPositionSlider.max = canvas.height - shape.size;
+
+            // Adjust current slider values if they fall outside new bounds
+            xPositionSlider.value = Math.max(xPositionSlider.min, Math.min(parseInt(xPositionSlider.value), xPositionSlider.max));
+            yPositionSlider.value = Math.max(yPositionSlider.min, Math.min(parseInt(yPositionSlider.value), yPositionSlider.max));
+            currentXPositionSpan.textContent = `${xPositionSlider.value} px`;
+            currentYPositionSpan.textContent = `${yPositionSlider.value} px`;
+
+
             // Always center if not moving, otherwise adjust for boundaries
             if (!animationFrameId || !moveShapeCheckbox.checked) {
-                shape.x = canvas.width / 2;
-                shape.y = canvas.height / 2;
+                if (currentDirection === 'horizontal') {
+                    shape.x = canvas.width / 2;
+                    shape.y = parseInt(yPositionSlider.value);
+                } else if (currentDirection === 'vertical') {
+                    shape.x = parseInt(xPositionSlider.value);
+                    shape.y = canvas.height / 2;
+                } else {
+                    shape.x = canvas.width / 2;
+                    shape.y = canvas.height / 2;
+                }
             } else {
                 shape.x = Math.max(shape.size, Math.min(shape.x, canvas.width - shape.size));
                 shape.y = Math.max(shape.size, Math.min(shape.y, canvas.height - shape.size));
